@@ -60,6 +60,11 @@ ListErr_t ListInsertAfter(ListCtx_t* list_ctx, int pos, elem_t value)
 {
     DEBUG_LIST_CHECK(list_ctx, "INSERT_AFTER_START");
 
+    if (list_ctx->head == -1 || list_ctx->tail == -1)
+    {
+        PRINTERR("Given list to insert is empty");
+        return LIST_IS_EMPTY;
+    }
     if (pos < 0)
     {
         PRINTERR("List position to insert is negative");
@@ -85,28 +90,24 @@ ListErr_t ListInsertAfter(ListCtx_t* list_ctx, int pos, elem_t value)
 
     int cur_index = list_ctx->free;
 
-    if (list_ctx->head == -1)
-    {
-        list_ctx->head = cur_index;
-    }
-    if (list_ctx->tail == -1)
-    {
-        list_ctx->tail = cur_index;
-    }
-    if (pos == list_ctx->tail)
-    {
-        list_ctx->tail = cur_index;
-    }
-
     list_ctx->free = list_ctx->data[list_ctx->free].next;
 
     list_ctx->data[cur_index].node = value;
     list_ctx->data[cur_index].prev = pos;
-    int pos_next = list_ctx->data[pos].next;
-    list_ctx->data[cur_index].next = pos_next;
 
-    list_ctx->data[pos_next].prev  = cur_index;
-    list_ctx->data[pos].next       = cur_index;
+    if (pos == list_ctx->tail)
+    {
+        list_ctx->tail = cur_index;
+        list_ctx->data[cur_index].next = 0;
+    }
+    else
+    {
+        int pos_next = list_ctx->data[pos].next;
+        list_ctx->data[cur_index].next = pos_next;
+        list_ctx->data[pos_next].prev  = cur_index;
+    }
+
+    list_ctx->data[pos].next = cur_index;
 
     DEBUG_LIST_CHECK(list_ctx, "INSERT_AFTER_END");
 
@@ -119,6 +120,11 @@ ListErr_t ListInsertBefore(ListCtx_t* list_ctx, int pos, elem_t value)
 {
     DEBUG_LIST_CHECK(list_ctx, "INSERT_BEFORE_START");
 
+    if (list_ctx->head == -1 || list_ctx->tail == -1)
+    {
+        PRINTERR("Given list to insert is empty");
+        return LIST_IS_EMPTY;
+    }
     if (pos < 0)
     {
         PRINTERR("List position to insert is negative");
@@ -144,28 +150,24 @@ ListErr_t ListInsertBefore(ListCtx_t* list_ctx, int pos, elem_t value)
 
     int cur_index = list_ctx->free;
 
-    if (list_ctx->head == -1)
-    {
-        list_ctx->head = cur_index;
-    }
-    if (list_ctx->tail == -1)
-    {
-        list_ctx->tail = cur_index;
-    }
-    if (pos == list_ctx->head)
-    {
-        list_ctx->head = cur_index;
-    }
-
     list_ctx->free = list_ctx->data[list_ctx->free].next;
 
     list_ctx->data[cur_index].node = value;
     list_ctx->data[cur_index].next = pos;
-    int pos_prev = list_ctx->data[pos].prev;
-    list_ctx->data[cur_index].prev = pos_prev;
 
-    list_ctx->data[pos_prev].next  = cur_index;
-    list_ctx->data[pos].prev       = cur_index;
+    if (pos == list_ctx->head)
+    {
+        list_ctx->head = cur_index;
+        list_ctx->data[cur_index].prev = 0;
+    }
+    else
+    {
+        int pos_prev = list_ctx->data[pos].prev;
+        list_ctx->data[cur_index].prev = pos_prev;
+        list_ctx->data[pos_prev].next  = cur_index;
+    }
+
+    list_ctx->data[pos].prev = cur_index;
 
     DEBUG_LIST_CHECK(list_ctx, "INSERT_BEFORE_END");
 
@@ -554,7 +556,7 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
         }
         if (list_ctx->data[i].prev != 0)
         {
-            for (; list_ctx->data[i].prev != 0; i = list_ctx->data[i].prev)
+            for (; list_ctx->data[i].prev > 0; i = list_ctx->data[i].prev)
             {
                 fprintf(stream, "node%d->", i);
             }

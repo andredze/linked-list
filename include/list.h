@@ -96,7 +96,8 @@ typedef enum ListErr
     LIST_TAIL_TOOBIG,
     LIST_POSITION_NEGATIVE,
     LIST_POSITION_TOO_BIG,
-    LIST_NO_SUCH_ELEMENT
+    LIST_NO_SUCH_ELEMENT,
+    LIST_IS_EMPTY
 } ListErr_t;
 
 //——————————————————————————————————————————————————————————————————————————————————————————
@@ -122,7 +123,8 @@ const char* const LIST_STR_ERRORS[] =
     [LIST_TAIL_TOOBIG]          = "LIST_TAIL_TOOBIG",
     [LIST_POSITION_NEGATIVE]    = "LIST_POSITION_NEGATIVE",
     [LIST_POSITION_TOO_BIG]     = "LIST_POSITION_TOO_BIG",
-    [LIST_NO_SUCH_ELEMENT]      = "LIST_NO_SUCH_ELEMENT"
+    [LIST_NO_SUCH_ELEMENT]      = "LIST_NO_SUCH_ELEMENT",
+    [LIST_IS_EMPTY]             = "LIST_IS_EMPTY"
     };
 
 //——————————————————————————————————————————————————————————————————————————————————————————
