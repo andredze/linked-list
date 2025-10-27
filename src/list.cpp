@@ -39,17 +39,17 @@ ListErr_t ListCtor(ListCtx_t* list_ctx, size_t capacity)
     list_ctx->data[0].node = LIST_POISON;
 
     /* Filling the free list */
-    for (int i = 1; i < capacity - 1; i++)
+    for (int i = 1; i < (int) capacity - 1; i++)
     {
-        list_ctx->data[i].prev = i - 1;
+        list_ctx->data[i].prev = -1; // TODO: LIST_PREV_POISON?
         list_ctx->data[i].node = LIST_POISON;
         list_ctx->data[i].next = i + 1;
     }
 
-    /* Filling the last element */
-    list_ctx->data[capacity - 1].prev = (capacity - 1) - 1;
+    /* Last free element addresses to null */
+    list_ctx->data[capacity - 1].prev = -1;
     list_ctx->data[capacity - 1].node = LIST_POISON;
-    list_ctx->data[capacity - 1].next = 0; // last free element addresses to null
+    list_ctx->data[capacity - 1].next = 0;
 
     return LIST_SUCCESS;
 }
@@ -71,16 +71,18 @@ ListErr_t ListInsertAfter(ListCtx_t* list_ctx, int pos, elem_t value)
         return LIST_POSITION_TOO_BIG;
     }
 
-    // TODO: проверять, что элемент pos вообще лежит в массиве
+    /* Check that pos is in list */
     if (list_ctx->data[pos].node == LIST_POISON)
     {
         PRINTERR("List doesn't have an element with pos = %d", pos);
         return LIST_NO_SUCH_ELEMENT;
     }
 
-    // TODO: проверять если список пустой и если полный
+    if (list_ctx->free == 0)
+    {
+        SAFE_CALL(ListRealloc(list_ctx));
+    }
 
-    // TODO: if free.next == NULL -> realloc || size == capacity
     int cur_index = list_ctx->free;
 
     if (list_ctx->head == -1)
@@ -128,16 +130,18 @@ ListErr_t ListInsertBefore(ListCtx_t* list_ctx, int pos, elem_t value)
         return LIST_POSITION_TOO_BIG;
     }
 
-    // TODO: проверять, что элемент pos вообще лежит в массиве
+    /* Check that pos is in list */
     if (list_ctx->data[pos].node == LIST_POISON)
     {
         PRINTERR("List doesn't have an element with pos = %d", pos);
         return LIST_NO_SUCH_ELEMENT;
     }
 
-    // TODO: проверять если список пустой и если полный
+    if (list_ctx->free == 0)
+    {
+        SAFE_CALL(ListRealloc(list_ctx));
+    }
 
-    // TODO: if free.next == NULL -> realloc || size == capacity
     int cur_index = list_ctx->free;
 
     if (list_ctx->head == -1)
@@ -179,11 +183,11 @@ ListErr_t ListPushFront(ListCtx_t* list_ctx, elem_t value)
         SAFE_CALL(ListRealloc(list_ctx));
     }
 
+    int cur_index  = list_ctx->free;
+    list_ctx->free = list_ctx->data[list_ctx->free].next;
+
     if (list_ctx->head == -1)
     {
-        int cur_index  = list_ctx->free;
-        list_ctx->free = list_ctx->data[list_ctx->free].next;
-
         list_ctx->head = cur_index;
         list_ctx->tail = cur_index;
         list_ctx->data[cur_index].prev = 0;
@@ -194,9 +198,6 @@ ListErr_t ListPushFront(ListCtx_t* list_ctx, elem_t value)
 
         return LIST_SUCCESS;
     }
-
-    int cur_index = list_ctx->free;
-    list_ctx->free = list_ctx->data[list_ctx->free].next;
 
     list_ctx->data[list_ctx->head].prev = cur_index;
 
@@ -217,7 +218,34 @@ ListErr_t ListPushBack(ListCtx_t* list_ctx, elem_t value)
 {
     DEBUG_LIST_CHECK(list_ctx, "PUSH_BACK_START");
 
+    if (list_ctx->free == 0)
+    {
+        SAFE_CALL(ListRealloc(list_ctx));
+    }
 
+    int cur_index  = list_ctx->free;
+    list_ctx->free = list_ctx->data[list_ctx->free].next;
+
+    if (list_ctx->tail == -1)
+    {
+        list_ctx->head = cur_index;
+        list_ctx->tail = cur_index;
+        list_ctx->data[cur_index].prev = 0;
+        list_ctx->data[cur_index].node = value;
+        list_ctx->data[cur_index].next = 0;
+
+        DEBUG_LIST_CHECK(list_ctx, "PUSH_BACK_END");
+
+        return LIST_SUCCESS;
+    }
+
+    list_ctx->data[list_ctx->tail].next = cur_index;
+
+    list_ctx->data[cur_index].prev = list_ctx->tail;
+    list_ctx->data[cur_index].node = value;
+    list_ctx->data[cur_index].next = 0;
+
+    list_ctx->tail = cur_index;
 
     DEBUG_LIST_CHECK(list_ctx, "PUSH_BACK_END");
 
@@ -240,12 +268,24 @@ ListErr_t ListRealloc(ListCtx_t* list_ctx)
         return LIST_DATA_REALLOC_ERROR;
     }
 
-    list_ctx->data = new_data;
+    list_ctx->data      = new_data;
+    size_t old_capacity = list_ctx->capacity;
+    list_ctx->capacity  = list_ctx->capacity * 2 + 1;
 
-    list_ctx->capacity = list_ctx->capacity * 2 + 1;
+    list_ctx->free = (int) old_capacity;
 
-    // TODO: заполнить пойзонами
-    // TODO: заполнить фришки
+    /* Filling the free list */
+    for (int i = (int) old_capacity; i < (int) list_ctx->capacity - 1; i++)
+    {
+        list_ctx->data[i].prev = -1;
+        list_ctx->data[i].node = LIST_POISON;
+        list_ctx->data[i].next = i + 1;
+    }
+
+    /* Last free element addresses to null */
+    list_ctx->data[list_ctx->capacity - 1].prev = -1;
+    list_ctx->data[list_ctx->capacity - 1].node = LIST_POISON;
+    list_ctx->data[list_ctx->capacity - 1].next = 0;
 
     DEBUG_LIST_CHECK(list_ctx, "REALLOC_END");
 
@@ -350,13 +390,13 @@ ListErr_t ListDump(ListCtx_t* list_ctx, ListDumpInfo_t* dump_info)
     }
 
     fprintf(log_stream,
+            "data     = %p;\n"
             "capacity = %zu;\n"
             "head     = %d;\n"
             "tail     = %d;\n"
-            "free     = %d;\n"
-            "data     = %p;\n",
-            list_ctx->capacity, list_ctx->head, list_ctx->tail,
-            list_ctx->free,     list_ctx->data);
+            "free     = %d;\n",
+            list_ctx->data, list_ctx->capacity, list_ctx->head,
+            list_ctx->tail, list_ctx->free);
 
     if (!(list_ctx->head >= 0 && (size_t) list_ctx->head < list_ctx->capacity))
     {
@@ -423,7 +463,6 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
                 "label=\"idx = %d | value = " SPEC " | { prev = %d | next = %d }\"];\n",
                 i, i, list_ctx->data[i].node, list_ctx->data[i].prev, list_ctx->data[i].next);
     }
-
     fprintf(stream, "\t");
 
     int i = list_ctx->head;
@@ -431,8 +470,28 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
     {
         fprintf(stream, "node%d->", i);
     }
+    fprintf(stream, "node%d;\n", i);
 
-    fprintf(stream, "node%d;\n}\n", i);
+    /* free list */
+    for (int j = list_ctx->free; j != 0; j = list_ctx->data[j].next)
+    {
+        fprintf(stream,
+                "\tnode%d[shape=\"Mrecord\", "
+                "style=\"filled\", "
+                "fillcolor=\"#C0FFC0\", "
+                "label=\"idx = %d | value = " SPEC " | { prev = %d | next = %d }\"];\n",
+                j, j, list_ctx->data[j].node, list_ctx->data[j].prev, list_ctx->data[j].next);
+    }
+    fprintf(stream, "\t");
+
+    int j = list_ctx->free;
+    for (; list_ctx->data[j].next != 0; j = list_ctx->data[j].next)
+    {
+        fprintf(stream, "node%d->", j);
+    }
+    fprintf(stream, "node%d;\n", j);
+
+    fprintf(stream, "}\n");
 
     fclose(stream);
 
