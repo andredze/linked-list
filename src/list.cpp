@@ -449,11 +449,18 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
     fprintf(stream,
             "digraph PENIS\n"
             "{\n"
-            "\trankdir=LR;\n");
+            "\trankdir=LR;"
+	        "\tgraph [splines=ortho];\n"
+	        "\tnode [fontname=\"Arial\", "
+            "shape=\"Mrecord\", "
+            "style=\"filled\", "
+            "color = \"#000064\", "
+            "fillcolor=\"#C0C0FF\", "
+            "fontcolor = \"#000053\"];\n");
 
     fprintf(stream, "\t");
 
-    for (size_t i = 0; i < list_ctx->capacity - 1; i++)
+    for (size_t i = 1; i < list_ctx->capacity - 1; i++)
     {
         fprintf(stream, "node%zu->", i);
     }
@@ -465,29 +472,34 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
     for (int i = list_ctx->head; i != 0; i = list_ctx->data[i].next)
     {
         fprintf(stream,
-                "\tnode%d[shape=\"Mrecord\", "
-                "style=\"filled\", "
-                "fillcolor=\"#FFC0C0\", "
-                "label=\"idx = %d | value = " SPEC " | { prev = %d | next = %d }\"];\n",
+                "\tnode%d[label=\"idx = %d | value = " SPEC " | { prev = %d | next = %d }\"];\n",
                 i, i, list_ctx->data[i].node, list_ctx->data[i].prev, list_ctx->data[i].next);
     }
     fprintf(stream, "\t");
 
     int i = list_ctx->head;
-    for (; list_ctx->data[i].next != 0; i = list_ctx->data[i].next)
+    if (list_ctx->data[i].next != 0)
     {
-        fprintf(stream, "node%d->", i);
+        for (; list_ctx->data[i].next != 0; i = list_ctx->data[i].next)
+        {
+            fprintf(stream, "node%d->", i);
+        }
+        fprintf(stream, "node%d [color = \"#000064\"];\n\t", i);
     }
-    fprintf(stream, "node%d;\n", i);
+    if (list_ctx->data[i].prev != 0)
+    {
+        for (; list_ctx->data[i].prev != 0; i = list_ctx->data[i].prev)
+        {
+            fprintf(stream, "node%d->", i);
+        }
+        fprintf(stream, "node%d [color = \"#640000\"];\n", i);
+    }
 
     /* free list */
     for (int j = list_ctx->free; j != 0; j = list_ctx->data[j].next)
     {
         fprintf(stream,
-                "\tnode%d[shape=\"Mrecord\", "
-                "style=\"filled\", "
-                "fillcolor=\"#C0FFC0\", "
-                "label=\"idx = %d | value = " SPEC " | { prev = %d | next = %d }\"];\n",
+                "\tnode%d[fillcolor=\"#C0FFC0\", color=\"#006400\", fontcolor = \"#005300\", label=\"idx = %d | value = " SPEC " | { prev = %d | next = %d }\"];\n",
                 j, j, list_ctx->data[j].node, list_ctx->data[j].prev, list_ctx->data[j].next);
     }
     fprintf(stream, "\t");
@@ -497,7 +509,10 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
     {
         fprintf(stream, "node%d->", j);
     }
-    fprintf(stream, "node%d;\n", j);
+    if (j != 0)
+    {
+        fprintf(stream, "node%d [color = \"#006400\"];\n", j);
+    }
 
     fprintf(stream, "}\n");
 
