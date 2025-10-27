@@ -298,17 +298,43 @@ ListErr_t ListErase(ListCtx_t* list_ctx, int pos)
 {
     DEBUG_LIST_CHECK(list_ctx, "ERASE_START");
 
-    int prev_ind = list_ctx->data[pos].prev;
     int next_ind = list_ctx->data[pos].next;
+    int prev_ind = list_ctx->data[pos].prev;
+
+    list_ctx->data[pos].prev = -1;
+    list_ctx->data[pos].node = LIST_POISON;
+    list_ctx->data[pos].next = list_ctx->free;
+
+    list_ctx->free = pos;
+
+    if (list_ctx->head == pos && list_ctx->tail == pos)
+    {
+        DEBUG_LIST_CHECK(list_ctx, "ERASE_END_CASE_ONE_ELEM");
+        return LIST_SUCCESS;
+    }
+    else if (list_ctx->head == pos)
+    {
+        list_ctx->head = next_ind;
+        list_ctx->data[next_ind].prev = 0;
+
+        DEBUG_LIST_CHECK(list_ctx, "ERASE_END_CASE_FIRST_ELEM");
+        return LIST_SUCCESS;
+    }
+    else if (list_ctx->tail == pos)
+    {
+        list_ctx->tail = prev_ind;
+        list_ctx->data[prev_ind].next = 0;
+
+        DEBUG_LIST_CHECK(list_ctx, "ERASE_END_CASE_LAST_ELEM");
+        return LIST_SUCCESS;
+    }
+
+    DPRINTF(">Erasing data[%d]:\n", pos);
+    DPRINTF("\tprev_ind = %d\n", prev_ind);
+    DPRINTF("\tnext_ind = %d\n\n", next_ind);
 
     list_ctx->data[prev_ind].next = next_ind;
     list_ctx->data[next_ind].prev = prev_ind;
-
-    list_ctx->data[pos].next = list_ctx->free;
-    list_ctx->data[pos].node = LIST_POISON;
-    list_ctx->data[pos].prev = -1;
-
-    list_ctx->free = pos;
 
     DEBUG_LIST_CHECK(list_ctx, "ERASE_END");
 
@@ -491,9 +517,6 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
     {
         fprintf(stream, "node%zu [style=\"invis\"];\n", list_ctx->capacity - 1);
     }
-
-    // NOTE: можно сделать буфер и записывать туда node->1, node->2 и тд)
-    // int* buffer = (int*) calloc(capacity)
 
     for (int i = list_ctx->head; i != 0; i = list_ctx->data[i].next)
     {

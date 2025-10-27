@@ -4,6 +4,8 @@
 
 int main()
 {
+    DPRINTF(BLUE "\nRunning tests\n\n" RESET_CLR);
+
     ListCtx_t list_ctx = {};
 
     BEGIN
@@ -35,14 +37,16 @@ int main()
     MAIN_CALL(ListInsertBefore(&list_ctx, 4, 22));
     LIST_CALL_DUMP(&list_ctx, "insert4", "TEST_INSERT_BEFORE_4");
 
-// TODO: dump for free list
-
     END;
+
+    DPRINTF(LIGHT_YELLOW ">Destroying list_ctx\n\n" RESET_CLR);
 
     if (ListDtor(&list_ctx))
     {
         return EXIT_FAILURE;
     }
+
+    DPRINTF(GREEN "Tests ran successfully\n\n" RESET_CLR);
 
     return EXIT_SUCCESS;
 }
