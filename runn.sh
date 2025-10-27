@@ -1,0 +1,2 @@
+./run.exe ^
+./makepng.sh

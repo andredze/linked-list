@@ -8,24 +8,28 @@ int main()
 
     BEGIN
 
-    if (ListCtor(&list_ctx, 64))
-    {
-        break;
-    }
+    MAIN_CALL(ListCtor(&list_ctx, 64));
+    LIST_CALL_DUMP(&list_ctx, "ctor", "TEST_AFTER_CTOR");
+
+    MAIN_CALL(ListPushFront(&list_ctx, 100));
+    LIST_CALL_DUMP(&list_ctx, "front1", "TEST_PUSH_FRONT_1");
+
+    MAIN_CALL(ListInsertAfter(&list_ctx, 1, 20));
+    LIST_CALL_DUMP(&list_ctx, "insert1", "TEST_INSERT_AFTER_1");
+
+    MAIN_CALL(ListInsertAfter(&list_ctx, 2, 30));
+    LIST_CALL_DUMP(&list_ctx, "insert2", "TEST_INSERT_AFTER_2");
+
+    MAIN_CALL(ListInsertAfter(&list_ctx, 1, 25));
+    LIST_CALL_DUMP(&list_ctx, "insert3", "TEST_INSERT_AFTER_3");
+
+    MAIN_CALL(ListPushFront(&list_ctx, 666));
+    LIST_CALL_DUMP(&list_ctx, "front2", "TEST_PUSH_FRONT_2");
+
+    MAIN_CALL(ListInsertBefore(&list_ctx, 4, 22));
+    LIST_CALL_DUMP(&list_ctx, "insert4", "TEST_INSERT_BEFORE_1");
 
     END;
-
-    DEBUG_LIST_CHECK(&list_ctx, "DEBUG DUMP FROM MAIN");
-
-#ifdef LIST_DEBUG
-    ListDumpInfo_t dump_info = {LIST_SUCCESS, "graph.png", "TEST_CALL1",
-                                __PRETTY_FUNCTION__, __FILE__, __LINE__};
-    SAFE_CALL(ListDump(&list_ctx, &dump_info));
-
-    ListDumpInfo_t dump_info2 = {LIST_SUCCESS, "graph.png", "TEST_CALL2",
-                                 __PRETTY_FUNCTION__, __FILE__, __LINE__};
-    SAFE_CALL(ListDump(&list_ctx, &dump_info2));
-#endif
 
     if (ListDtor(&list_ctx))
     {
