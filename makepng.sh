@@ -9,3 +9,5 @@ for file in graphs/dot/*.dot; do
     dot "$file" -T png -o "graphs/png/${filename}.png"
 
 done
+
+echo -e "Converted graphs/dot/*.dot files to graphs/png/*.png\n"

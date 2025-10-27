@@ -502,9 +502,9 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
 	        "\tnode [fontname=\"Arial\", "
             "shape=\"Mrecord\", "
             "style=\"filled\", "
-            "color = \"#000064\", "
-            "fillcolor=\"#C0C0FF\", "
-            "fontcolor = \"#000053\"];\n");
+            "color = \"#3E3A22\", "
+            "fillcolor=\"#E3DFC9\", "
+            "fontcolor = \"#3E3A22\"];\n");
 
 
     fprintf(stream, "\t");
@@ -533,7 +533,7 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
         {
             fprintf(stream, "node%d->", i);
         }
-        fprintf(stream, "node%d [color = \"#000064\"];\n\t", i);
+        fprintf(stream, "node%d [color = \"#640000\"];\n\t", i);
     }
     if (list_ctx->data[i].prev != 0)
     {
@@ -541,7 +541,7 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
         {
             fprintf(stream, "node%d->", i);
         }
-        fprintf(stream, "node%d [color = \"#640000\"];\n", i);
+        fprintf(stream, "node%d [color = \"#000064\"];\n", i);
     }
 
     /* free list */
@@ -563,12 +563,12 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
     }
     if (j != 0)
     {
-        fprintf(stream, "node%d [color = \"#006400\"];\n", j);
+        fprintf(stream, "node%d [color = \"#006400\", style=dashed];\n", j);
     }
 
     fprintf(stream, "\tnode [shape=\"box\", color=\"#70421A\", fontcolor=\"#70421A\", fillcolor=\"#DEB887\"];\n"
                     "\ttail; head; free;\n"
-                    "\tedge[color=\"#70421A\"]"
+                    "\tedge[color=\"#70421A\", arrowhead=none]"
                     "\ttail->node%d;\n"
                     "\thead->node%d;\n"
                     "\tfree->node%d;\n"
