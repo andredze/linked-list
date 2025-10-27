@@ -2,6 +2,7 @@
 *.htm
 *.png
 *.txt
+*.dot
 
 # Prerequisites
 *.d

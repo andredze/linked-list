@@ -27,7 +27,7 @@ SOURCES = src/main.cpp \
 
 EXECUTABLE = run.exe
 
-TXT = graphs/txt/*.txt
+DOT = graphs/dot/*.dot
 
 LOG = *.htm
 
@@ -37,4 +37,4 @@ all:
 	$(CXX) $(CXXFLAGS) $(SOURCES) -o $(EXECUTABLE)
 
 clean:
-	rm $(EXECUTABLE) $(TXT) $(PNG) $(LOG)
+	rm $(EXECUTABLE) $(DOT) $(PNG) $(LOG)

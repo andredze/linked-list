@@ -435,9 +435,9 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
     }
 
     char filename[MAX_FILENAME_LEN] = {};
-    strcpy(filename, "graphs/txt/");
+    strcpy(filename, "graphs/dot/");
     strcat(filename, image_name);
-    strcat(filename, ".txt");
+    strcat(filename, ".dot");
 
     FILE* stream = fopen(filename, "w");
     if (stream == NULL)
@@ -450,6 +450,14 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
             "digraph PENIS\n"
             "{\n"
             "\trankdir=LR;\n");
+
+    fprintf(stream, "\t");
+
+    for (size_t i = 0; i < list_ctx->capacity - 1; i++)
+    {
+        fprintf(stream, "node%zu->", i);
+    }
+    fprintf(stream, "node%zu [weight = 100, style = \"invis\"];\n", list_ctx->capacity - 1);
 
     // NOTE: можно сделать буфер и записывать туда node->1, node->2 и тд)
     // int* buffer = (int*) calloc(capacity)

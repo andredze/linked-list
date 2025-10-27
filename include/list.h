@@ -16,7 +16,11 @@
         BEGIN                                                                               \
         ListDumpInfo_t dump_info = {LIST_SUCCESS, name, message, __PRETTY_FUNCTION__,       \
                                     __FILE__, __LINE__};                                    \
-        SAFE_CALL(ListDump(list_ctx_ptr, &dump_info));                                      \
+        if (ListDump(list_ctx_ptr, &dump_info))                                             \
+        {                                                                                   \
+            ListDtor(list_ctx_ptr);                                                         \
+            return EXIT_FAILURE;                                                            \
+        }                                                                                   \
         END
 
 #define DEBUG_LIST_CHECK(list_ctx, reason)                                              \
