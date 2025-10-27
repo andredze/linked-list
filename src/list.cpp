@@ -296,6 +296,7 @@ ListErr_t ListRealloc(ListCtx_t* list_ctx)
 
 ListErr_t ListErase(ListCtx_t* list_ctx, int pos)
 {
+    DPRINTF(">Erasing data[%d]:\n", pos);
     DEBUG_LIST_CHECK(list_ctx, "ERASE_START");
 
     int next_ind = list_ctx->data[pos].next;
@@ -307,8 +308,13 @@ ListErr_t ListErase(ListCtx_t* list_ctx, int pos)
 
     list_ctx->free = pos;
 
+    DPRINTF("\thead = %d;\n\ttail = %d;\n\tpos = %d;\n\n", list_ctx->head, list_ctx->tail, pos);
+
     if (list_ctx->head == pos && list_ctx->tail == pos)
     {
+        list_ctx->head = -1;
+        list_ctx->tail = -1;
+
         DEBUG_LIST_CHECK(list_ctx, "ERASE_END_CASE_ONE_ELEM");
         return LIST_SUCCESS;
     }
@@ -329,9 +335,7 @@ ListErr_t ListErase(ListCtx_t* list_ctx, int pos)
         return LIST_SUCCESS;
     }
 
-    DPRINTF(">Erasing data[%d]:\n", pos);
-    DPRINTF("\tprev_ind = %d\n", prev_ind);
-    DPRINTF("\tnext_ind = %d\n\n", next_ind);
+    DPRINTF("\tprev_ind = %d;\n\tnext_ind = %d;\n\n", prev_ind, next_ind);
 
     list_ctx->data[prev_ind].next = next_ind;
     list_ctx->data[next_ind].prev = prev_ind;
@@ -447,7 +451,7 @@ ListErr_t ListDump(ListCtx_t* list_ctx, ListDumpInfo_t* dump_info)
             list_ctx->data, list_ctx->capacity, list_ctx->head,
             list_ctx->tail, list_ctx->free);
 
-    if (!(list_ctx->head >= 0 && (size_t) list_ctx->head < list_ctx->capacity))
+    if (!(list_ctx->head < (int) list_ctx->capacity))
     {
         fclose(log_stream);
         return LIST_SUCCESS;
@@ -506,10 +510,9 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
             "fillcolor=\"#E3DFC9\", "
             "fontcolor = \"#3E3A22\"];\n");
 
-
     fprintf(stream, "\t");
 
-    for (size_t i = 1; i < list_ctx->capacity - 1; i++)
+    for (size_t i = 0; i < list_ctx->capacity - 1; i++)
     {
         fprintf(stream, "node%zu->", i);
     }
@@ -517,31 +520,46 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
     {
         fprintf(stream, "node%zu [style=\"invis\"];\n", list_ctx->capacity - 1);
     }
+    fprintf(stream, "\tnode0[color = \"#3E3A22\", "
+                    "fillcolor = \"#ecede8\", "
+                    "fontcolor = \"#3E3A22\", "
+                    "label=\"{ idx = 0 | value = " SPEC " | { prev = %d | next = %d }}\"];\n",
+            list_ctx->data[0].node, list_ctx->data[0].prev, list_ctx->data[0].next);
 
-    for (int i = list_ctx->head; i != 0; i = list_ctx->data[i].next)
-    {
-        fprintf(stream,
-                "\tnode%d[label=\"{ idx = %d | value = " SPEC " | { prev = %d | next = %d }}\"];\n",
-                i, i, list_ctx->data[i].node, list_ctx->data[i].prev, list_ctx->data[i].next);
-    }
-    fprintf(stream, "\t");
+    int skip_main_dump = 0;
 
-    int i = list_ctx->head;
-    if (list_ctx->data[i].next != 0)
+    if (!(list_ctx->head >= 0))
     {
-        for (; list_ctx->data[i].next != 0; i = list_ctx->data[i].next)
-        {
-            fprintf(stream, "node%d->", i);
-        }
-        fprintf(stream, "node%d [color = \"#640000\"];\n\t", i);
+        skip_main_dump = 1;
     }
-    if (list_ctx->data[i].prev != 0)
+
+    if (!(skip_main_dump))
     {
-        for (; list_ctx->data[i].prev != 0; i = list_ctx->data[i].prev)
+        for (int i = list_ctx->head; i != 0; i = list_ctx->data[i].next)
         {
-            fprintf(stream, "node%d->", i);
+            fprintf(stream,
+                    "\tnode%d[label=\"{ idx = %d | value = " SPEC " | { prev = %d | next = %d }}\"];\n",
+                    i, i, list_ctx->data[i].node, list_ctx->data[i].prev, list_ctx->data[i].next);
         }
-        fprintf(stream, "node%d [color = \"#000064\"];\n", i);
+        fprintf(stream, "\t");
+
+        int i = list_ctx->head;
+        if (list_ctx->data[i].next != 0)
+        {
+            for (; list_ctx->data[i].next != 0; i = list_ctx->data[i].next)
+            {
+                fprintf(stream, "node%d->", i);
+            }
+            fprintf(stream, "node%d [color = \"#640000\"];\n\t", i);
+        }
+        if (list_ctx->data[i].prev != 0)
+        {
+            for (; list_ctx->data[i].prev != 0; i = list_ctx->data[i].prev)
+            {
+                fprintf(stream, "node%d->", i);
+            }
+            fprintf(stream, "node%d [color = \"#000064\"];\n", i);
+        }
     }
 
     /* free list */
@@ -557,27 +575,36 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
     fprintf(stream, "\t");
 
     int j = list_ctx->free;
-    for (; list_ctx->data[j].next != 0; j = list_ctx->data[j].next)
+    if (list_ctx->data[j].next != 0)
     {
-        fprintf(stream, "node%d->", j);
-    }
-    if (j != 0)
-    {
-        fprintf(stream, "node%d [color = \"#006400\", style=dashed];\n", j);
+        for (; list_ctx->data[j].next != 0; j = list_ctx->data[j].next)
+        {
+            fprintf(stream, "node%d->", j);
+        }
+        if (j != 0)
+        {
+            fprintf(stream, "node%d [color = \"#006400\", style=dashed];\n", j);
+        }
     }
 
     fprintf(stream, "\tnode [shape=\"box\", color=\"#70421A\", fontcolor=\"#70421A\", fillcolor=\"#DEB887\"];\n"
                     "\ttail; head; free;\n"
-                    "\tedge[color=\"#70421A\", arrowhead=none]"
-                    "\ttail->node%d;\n"
-                    "\thead->node%d;\n"
-                    "\tfree->node%d;\n"
+                    "\tedge[color=\"#70421A\", arrowhead=none]");
+
+    if (list_ctx->tail >= 0)
+    {
+        fprintf(stream, "\ttail->node%d;\n", list_ctx->tail);
+    }
+    if (list_ctx->head >= 0)
+    {
+        fprintf(stream, "\thead->node%d;\n", list_ctx->head);
+    }
+    fprintf(stream, "\tfree->node%d;\n"
                     "\t{ rank=same; tail; head; free; }\n"
                     "\t{ rank=same; ",
-                    list_ctx->tail,
-                    list_ctx->head,
                     list_ctx->free);
-    for (size_t ind = 1; ind < list_ctx->capacity; ind++)
+
+    for (size_t ind = 0; ind < list_ctx->capacity; ind++)
     {
         fprintf(stream, "node%zu; ", ind);
     }

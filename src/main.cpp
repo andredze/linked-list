@@ -28,6 +28,15 @@ int main()
     MAIN_CALL(ListErase       (&list_ctx, 2));
     LIST_CALL_DUMP(&list_ctx, "erase1", "TEST_ERASE_1");
 
+    MAIN_CALL(ListErase       (&list_ctx, 1));
+    LIST_CALL_DUMP(&list_ctx, "erase2", "TEST_ERASE_2");
+
+    MAIN_CALL(ListErase       (&list_ctx, 3));
+    LIST_CALL_DUMP(&list_ctx, "erase3", "TEST_ERASE_3");
+
+    MAIN_CALL(ListErase       (&list_ctx, 4));
+    LIST_CALL_DUMP(&list_ctx, "erase4", "TEST_ERASE_4");
+
     MAIN_CALL(ListPushFront   (&list_ctx, 666));
     LIST_CALL_DUMP(&list_ctx, "front2",  "TEST_PUSH_FRONT_2");
 
