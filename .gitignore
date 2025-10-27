@@ -1,3 +1,8 @@
+# Log files
+*.htm
+*.png
+*.txt
+
 # Prerequisites
 *.d
 
