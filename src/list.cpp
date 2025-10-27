@@ -294,6 +294,29 @@ ListErr_t ListRealloc(ListCtx_t* list_ctx)
 
 //------------------------------------------------------------------------------------------
 
+ListErr_t ListErase(ListCtx_t* list_ctx, int pos)
+{
+    DEBUG_LIST_CHECK(list_ctx, "ERASE_START");
+
+    int prev_ind = list_ctx->data[pos].prev;
+    int next_ind = list_ctx->data[pos].next;
+
+    list_ctx->data[prev_ind].next = next_ind;
+    list_ctx->data[next_ind].prev = prev_ind;
+
+    list_ctx->data[pos].next = list_ctx->free;
+    list_ctx->data[pos].node = LIST_POISON;
+    list_ctx->data[pos].prev = -1;
+
+    list_ctx->free = pos;
+
+    DEBUG_LIST_CHECK(list_ctx, "ERASE_END");
+
+    return LIST_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------
+
 ListErr_t ListDtor(ListCtx_t* list_ctx)
 {
     if (list_ctx == NULL)
@@ -416,7 +439,7 @@ ListErr_t ListDump(ListCtx_t* list_ctx, ListDumpInfo_t* dump_info)
         return graph_error;
     }
 
-    fprintf(log_stream, "\n<img src = graphs/png/%s.png width = 400px>\n\n", dump_info->image_name);
+    fprintf(log_stream, "\n<img src = graphs/png/%s.png width = 600px>\n\n", dump_info->image_name);
 
     fclose(log_stream);
 
@@ -447,9 +470,8 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
     }
 
     fprintf(stream,
-            "digraph PENIS\n"
+            "digraph GG\n"
             "{\n"
-            "\trankdir=LR;"
 	        "\tgraph [splines=ortho];\n"
 	        "\tnode [fontname=\"Arial\", "
             "shape=\"Mrecord\", "
@@ -458,13 +480,17 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
             "fillcolor=\"#C0C0FF\", "
             "fontcolor = \"#000053\"];\n");
 
+
     fprintf(stream, "\t");
 
     for (size_t i = 1; i < list_ctx->capacity - 1; i++)
     {
         fprintf(stream, "node%zu->", i);
     }
-    fprintf(stream, "node%zu [weight = 100, style = \"invis\"];\n", list_ctx->capacity - 1);
+    if (list_ctx->capacity >= 1)
+    {
+        fprintf(stream, "node%zu [style=\"invis\"];\n", list_ctx->capacity - 1);
+    }
 
     // NOTE: можно сделать буфер и записывать туда node->1, node->2 и тд)
     // int* buffer = (int*) calloc(capacity)
@@ -472,7 +498,7 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
     for (int i = list_ctx->head; i != 0; i = list_ctx->data[i].next)
     {
         fprintf(stream,
-                "\tnode%d[label=\"idx = %d | value = " SPEC " | { prev = %d | next = %d }\"];\n",
+                "\tnode%d[label=\"{ idx = %d | value = " SPEC " | { prev = %d | next = %d }}\"];\n",
                 i, i, list_ctx->data[i].node, list_ctx->data[i].prev, list_ctx->data[i].next);
     }
     fprintf(stream, "\t");
@@ -499,7 +525,10 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
     for (int j = list_ctx->free; j != 0; j = list_ctx->data[j].next)
     {
         fprintf(stream,
-                "\tnode%d[fillcolor=\"#C0FFC0\", color=\"#006400\", fontcolor = \"#005300\", label=\"idx = %d | value = " SPEC " | { prev = %d | next = %d }\"];\n",
+                "\tnode%d[fillcolor=\"#C0FFC0\", "
+                "color=\"#006400\","
+                "fontcolor = \"#005300\", "
+                "label=\"{ idx = %d | value = " SPEC " | { prev = %d | next = %d }}\"];\n",
                 j, j, list_ctx->data[j].node, list_ctx->data[j].prev, list_ctx->data[j].next);
     }
     fprintf(stream, "\t");
@@ -514,8 +543,23 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
         fprintf(stream, "node%d [color = \"#006400\"];\n", j);
     }
 
-    fprintf(stream, "}\n");
+    fprintf(stream, "\tnode [shape=\"box\", color=\"#70421A\", fontcolor=\"#70421A\", fillcolor=\"#DEB887\"];\n"
+                    "\ttail; head; free;\n"
+                    "\tedge[color=\"#70421A\"]"
+                    "\ttail->node%d;\n"
+                    "\thead->node%d;\n"
+                    "\tfree->node%d;\n"
+                    "\t{ rank=same; tail; head; free; }\n"
+                    "\t{ rank=same; ",
+                    list_ctx->tail,
+                    list_ctx->head,
+                    list_ctx->free);
+    for (size_t ind = 1; ind < list_ctx->capacity; ind++)
+    {
+        fprintf(stream, "node%zu; ", ind);
+    }
 
+    fprintf(stream, "}\n}\n");
     fclose(stream);
 
     return LIST_SUCCESS;

@@ -151,6 +151,7 @@ const size_t LIST_MAX_CAPACITY = 1024 * 1024 * 1024;
 ListErr_t ListCtor            (ListCtx_t* list_ctx, size_t capacity);
 ListErr_t ListDtor            (ListCtx_t* list_ctx);
 ListErr_t ListRealloc         (ListCtx_t* list_ctx);
+ListErr_t ListErase           (ListCtx_t* list_ctx, int pos);
 ListErr_t ListInsertAfter     (ListCtx_t* list_ctx, int pos, elem_t value);
 ListErr_t ListInsertBefore    (ListCtx_t* list_ctx, int pos, elem_t value);
 ListErr_t ListPushFront       (ListCtx_t* list_ctx,          elem_t value);

@@ -23,6 +23,9 @@ int main()
     MAIN_CALL(ListInsertAfter (&list_ctx, 1, 25));
     LIST_CALL_DUMP(&list_ctx, "insert3", "TEST_INSERT_AFTER_3");
 
+    MAIN_CALL(ListErase       (&list_ctx, 2));
+    LIST_CALL_DUMP(&list_ctx, "erase1", "TEST_ERASE_1");
+
     MAIN_CALL(ListPushFront   (&list_ctx, 666));
     LIST_CALL_DUMP(&list_ctx, "front2",  "TEST_PUSH_FRONT_2");
 
