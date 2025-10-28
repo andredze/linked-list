@@ -396,7 +396,7 @@ ListErr_t ListVerify(ListCtx_t* list_ctx)
 
     return LIST_SUCCESS;
 }
-
+// TODO: в связь next -1 - в release можно не хранить poison если в прев не -1, значит элемент занят
 //------------------------------------------------------------------------------------------
 
 ListErr_t ListDump(ListCtx_t* list_ctx, ListDumpInfo_t* dump_info)
@@ -478,6 +478,10 @@ ListErr_t ListDump(ListCtx_t* list_ctx, ListDumpInfo_t* dump_info)
     return LIST_SUCCESS;
 }
 
+//------------------------------------------------------------------------------------------
+
+// TODO: if value == LIST_POISON -> fprintf("PZN")
+
 ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
 {
     assert(list_ctx   != NULL);
@@ -488,7 +492,9 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
         PRINTERR("Too big filename for graph image");
         return LIST_GRAPH_ERROR;
     }
+// TODO: svg and not png
 
+// TODO: static переменная в дампе - номера картинок не пересекаются - папка с названием в дату и время - log.html и svg/ dot/
     char filename[MAX_FILENAME_LEN] = {};
     strcpy(filename, "graphs/dot/");
     strcat(filename, image_name);
