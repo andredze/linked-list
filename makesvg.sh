@@ -6,8 +6,8 @@ for file in graphs/dot/*.dot; do
 
     filename=$(basename "$file" .dot)
 
-    dot "$file" -T png -o "graphs/png/${filename}.png"
+    dot "$file" -T svg -o "graphs/svg/${filename}.svg"
 
 done
 
-echo -e "Converted graphs/dot/*.dot files to graphs/png/*.png\n"
+echo -e "Converted graphs/dot/*.dot files to graphs/svg/*.svg\n"

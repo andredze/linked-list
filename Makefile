@@ -31,10 +31,10 @@ DOT = graphs/dot/*.dot
 
 LOG = *.htm
 
-PNG = graphs/png/*.png
+SVG = graphs/svg/*.svg
 
 all:
 	$(CXX) $(CXXFLAGS) $(SOURCES) -o $(EXECUTABLE)
 
 clean:
-	rm $(EXECUTABLE) $(DOT) $(PNG) $(LOG)
+	rm $(EXECUTABLE) $(DOT) $(SVG) $(LOG)

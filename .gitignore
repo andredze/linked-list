@@ -3,6 +3,7 @@
 *.png
 *.txt
 *.dot
+*.svg
 
 # Prerequisites
 *.d

@@ -485,7 +485,7 @@ ListErr_t ListDump(ListCtx_t* list_ctx, ListDumpInfo_t* dump_info)
         return graph_error;
     }
 
-    fprintf(log_stream, "\n<img src = graphs/png/%s.png width = 600px>\n\n", dump_info->image_name);
+    fprintf(log_stream, "\n<img src = graphs/svg/%s.svg width = 100%%>\n\n", dump_info->image_name);
 
     fclose(log_stream);
 
