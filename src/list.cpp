@@ -93,7 +93,7 @@ ListErr_t ListInsertAfter(ListCtx_t* list_ctx, int pos, elem_t value)
     SAFE_CALL(ListCheckPos(list_ctx, pos));
 
     /* Check that pos is in list */
-    if (list_ctx->data[pos].node == LIST_POISON)
+    if (list_ctx->data[pos].prev == -1)
     {
         PRINTERR("List doesn't have an element with pos = %d", pos);
         return LIST_NO_SUCH_ELEMENT;
@@ -145,7 +145,7 @@ ListErr_t ListInsertBefore(ListCtx_t* list_ctx, int pos, elem_t value)
     SAFE_CALL(ListCheckPos(list_ctx, pos));
 
     /* Check that pos is in list */
-    if (list_ctx->data[pos].node == LIST_POISON)
+    if (list_ctx->data[pos].prev == -1)
     {
         PRINTERR("List doesn't have an element with pos = %d", pos);
         return LIST_NO_SUCH_ELEMENT;
@@ -272,9 +272,9 @@ ListErr_t ListRealloc(ListCtx_t* list_ctx)
         return LIST_DATA_REALLOC_ERROR;
     }
 
-    list_ctx->data      = new_data;
     size_t old_capacity = list_ctx->capacity;
     list_ctx->capacity  = list_ctx->capacity * 2 + 1;
+    list_ctx->data      = new_data;
 
     list_ctx->free = (int) old_capacity;
 
@@ -306,12 +306,12 @@ ListErr_t ListErase(ListCtx_t* list_ctx, int pos)
 
     DEBUG_LIST_CHECK(list_ctx, "ERASE_START");
 
-    // TODO: Validate pos
+    SAFE_CALL(ListCheckPos(list_ctx, pos));
 
     int next_ind = list_ctx->data[pos].next;
     int prev_ind = list_ctx->data[pos].prev;
 
-    /* connect pos to free and set poisons */
+    /* Connect pos to free and set poisons */
     list_ctx->data[pos].prev = -1;
     list_ctx->data[pos].node = LIST_POISON;
     list_ctx->data[pos].next = list_ctx->free;
@@ -347,6 +347,7 @@ ListErr_t ListDtor(ListCtx_t* list_ctx)
 
     if (list_ctx == NULL)
     {
+        PRINTERR("LIST_CTX_NULL");
         return LIST_CTX_NULL;
     }
 
@@ -366,10 +367,15 @@ ListErr_t ListDtor(ListCtx_t* list_ctx)
 ListErr_t ListVerify(ListCtx_t* list_ctx)
 {
     // TODO: проверять вообще все индексы, а не только head и tail
+    // TODO: проверять free
 
     if (list_ctx == NULL)
     {
         return LIST_CTX_NULL;
+    }
+    if (list_ctx->capacity > LIST_MAX_CAPACITY)
+    {
+        return LIST_CAPACITY_EXCEEDS_MAX;
     }
     if (list_ctx->data == NULL)
     {
@@ -399,6 +405,9 @@ ListErr_t ListVerify(ListCtx_t* list_ctx)
 
 ListErr_t ListDump(ListCtx_t* list_ctx, ListDumpInfo_t* dump_info)
 {
+// TODO: fix dump when capacity is bad
+// TODO: fix dump when data is NULL
+
     static int is_first_dump = 1;
     FILE* log_stream = NULL;
 
@@ -445,22 +454,25 @@ ListErr_t ListDump(ListCtx_t* list_ctx, ListDumpInfo_t* dump_info)
     fprintf(log_stream,
             "data     = %p;\n"
             "capacity = %zu;\n"
-            "head     = %d;\n"
-            "tail     = %d;\n"
             "free     = %d;\n",
             list_ctx->data,
             list_ctx->capacity,
-            list_ctx->data[0].next,
-            list_ctx->data[0].prev,
             list_ctx->free);
 
-    if (dump_info->error == LIST_HEAD_NEGATIVE ||
-        dump_info->error == LIST_HEAD_TOOBIG)
+    if (dump_info->error == LIST_DATA_NULL)
     {
         fclose(log_stream);
         return LIST_SUCCESS;
     }
-    if (dump_info->error == LIST_DATA_NULL)
+
+    fprintf(log_stream,
+            "head     = %d;\n"
+            "tail     = %d;\n",
+            list_ctx->data[0].next,
+            list_ctx->data[0].prev);
+
+    if (dump_info->error == LIST_HEAD_NEGATIVE ||
+        dump_info->error == LIST_HEAD_TOOBIG)
     {
         fclose(log_stream);
         return LIST_SUCCESS;

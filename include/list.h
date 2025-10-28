@@ -28,7 +28,8 @@
         ListErr_t error = LIST_SUCCESS;                                                 \
         if ((error = ListVerify(list_ctx)))                                             \
         {                                                                               \
-            ListDumpInfo_t dump_info = {error, "err_dump.png", reason,                  \
+            PRINTERR("ListVerify not passed! Check \"list_log.htm\"");                  \
+            ListDumpInfo_t dump_info = {error, "err_dump", reason,                      \
                                         __PRETTY_FUNCTION__, __FILE__, __LINE__};       \
             if (ListDump(list_ctx, &dump_info))                                         \
             {                                                                           \
