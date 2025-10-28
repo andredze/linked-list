@@ -4,6 +4,8 @@
 
 ListErr_t ListCtor(ListCtx_t* list_ctx, size_t capacity)
 {
+    DPRINTF("> Start ListCtor(capacity = %zu)\n", capacity);
+
     if (list_ctx == NULL)
     {
         PRINTERR("LIST_CTX_NULL");
@@ -49,6 +51,28 @@ ListErr_t ListCtor(ListCtx_t* list_ctx, size_t capacity)
     list_ctx->data[capacity - 1].node = LIST_POISON;
     list_ctx->data[capacity - 1].next = 0;
 
+    DPRINTF("> End   ListCtor\n\n");
+
+    return LIST_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------
+
+ListErr_t ListCheckPos(ListCtx_t* list_ctx, int pos)
+{
+    assert(list_ctx != NULL);
+
+    if (pos < 0)
+    {
+        PRINTERR("List position is negative");
+        return LIST_POSITION_NEGATIVE;
+    }
+    if ((size_t) pos >= list_ctx->capacity)
+    {
+        PRINTERR("List position is too big");
+        return LIST_POSITION_TOO_BIG;
+    }
+
     return LIST_SUCCESS;
 }
 
@@ -56,6 +80,8 @@ ListErr_t ListCtor(ListCtx_t* list_ctx, size_t capacity)
 
 ListErr_t ListInsertAfter(ListCtx_t* list_ctx, int pos, elem_t value)
 {
+    DPRINTF("> Start ListInsertAfter(pos = %d, value = " SPEC ")\n", pos, value);
+
     DEBUG_LIST_CHECK(list_ctx, "INSERT_AFTER_START");
 
     if (list_ctx->data[0].next == 0 || list_ctx->data[0].prev == 0)
@@ -63,16 +89,8 @@ ListErr_t ListInsertAfter(ListCtx_t* list_ctx, int pos, elem_t value)
         PRINTERR("Given list to insert is empty");
         return LIST_IS_EMPTY;
     }
-    if (pos < 0)
-    {
-        PRINTERR("List position to insert is negative");
-        return LIST_POSITION_NEGATIVE;
-    }
-    if ((size_t) pos >= list_ctx->capacity)
-    {
-        PRINTERR("List position to insert is too big");
-        return LIST_POSITION_TOO_BIG;
-    }
+
+    SAFE_CALL(ListCheckPos(list_ctx, pos));
 
     /* Check that pos is in list */
     if (list_ctx->data[pos].node == LIST_POISON)
@@ -105,6 +123,8 @@ ListErr_t ListInsertAfter(ListCtx_t* list_ctx, int pos, elem_t value)
 
     DEBUG_LIST_CHECK(list_ctx, "INSERT_AFTER_END");
 
+    DPRINTF("> End   ListInsertAfter\n\n");
+
     return LIST_SUCCESS;
 }
 
@@ -112,6 +132,8 @@ ListErr_t ListInsertAfter(ListCtx_t* list_ctx, int pos, elem_t value)
 
 ListErr_t ListInsertBefore(ListCtx_t* list_ctx, int pos, elem_t value)
 {
+    DPRINTF("> Start ListInsertBefore(pos = %d, value = " SPEC ")\n", pos, value);
+
     DEBUG_LIST_CHECK(list_ctx, "INSERT_BEFORE_START");
 
     if (list_ctx->data[0].next == 0 || list_ctx->data[0].prev == 0)
@@ -119,17 +141,8 @@ ListErr_t ListInsertBefore(ListCtx_t* list_ctx, int pos, elem_t value)
         PRINTERR("Given list to insert is empty");
         return LIST_IS_EMPTY;
     }
-    // TODO: POS_IS_VALID
-    if (pos < 0)
-    {
-        PRINTERR("List position to insert is negative");
-        return LIST_POSITION_NEGATIVE;
-    }
-    if ((size_t) pos >= list_ctx->capacity)
-    {
-        PRINTERR("List position to insert is too big");
-        return LIST_POSITION_TOO_BIG;
-    }
+
+    SAFE_CALL(ListCheckPos(list_ctx, pos));
 
     /* Check that pos is in list */
     if (list_ctx->data[pos].node == LIST_POISON)
@@ -162,6 +175,8 @@ ListErr_t ListInsertBefore(ListCtx_t* list_ctx, int pos, elem_t value)
 
     DEBUG_LIST_CHECK(list_ctx, "INSERT_BEFORE_END");
 
+    DPRINTF("> End   ListInsertBefore\n\n");
+
     return LIST_SUCCESS;
 }
 
@@ -169,6 +184,8 @@ ListErr_t ListInsertBefore(ListCtx_t* list_ctx, int pos, elem_t value)
 
 ListErr_t ListPushFront(ListCtx_t* list_ctx, elem_t value)
 {
+    DPRINTF("> Start ListPushFront(value = " SPEC ")\n", value);
+
     DEBUG_LIST_CHECK(list_ctx, "PUSH_FRONT_START");
 
     if (list_ctx->free == 0)
@@ -195,6 +212,8 @@ ListErr_t ListPushFront(ListCtx_t* list_ctx, elem_t value)
 
     DEBUG_LIST_CHECK(list_ctx, "PUSH_FRONT_END");
 
+    DPRINTF("> End   ListPushFront\n\n");
+
     return LIST_SUCCESS;
 }
 
@@ -202,6 +221,8 @@ ListErr_t ListPushFront(ListCtx_t* list_ctx, elem_t value)
 
 ListErr_t ListPushBack(ListCtx_t* list_ctx, elem_t value)
 {
+    DPRINTF("> Start ListPushBack(value = " SPEC ")\n", value);
+
     DEBUG_LIST_CHECK(list_ctx, "PUSH_BACK_START");
 
     if (list_ctx->free == 0)
@@ -228,6 +249,8 @@ ListErr_t ListPushBack(ListCtx_t* list_ctx, elem_t value)
 
     DEBUG_LIST_CHECK(list_ctx, "PUSH_BACK_END");
 
+    DPRINTF("> End   ListPushBack\n\n");
+
     return LIST_SUCCESS;
 }
 
@@ -235,6 +258,8 @@ ListErr_t ListPushBack(ListCtx_t* list_ctx, elem_t value)
 
 ListErr_t ListRealloc(ListCtx_t* list_ctx)
 {
+    DPRINTF("\t> Start ListRealloc()\n");
+
     DEBUG_LIST_CHECK(list_ctx, "REALLOC_START");
 
     size_t new_size = sizeof(list_ctx->data[0]) * (list_ctx->capacity * 2 + 1);
@@ -268,6 +293,8 @@ ListErr_t ListRealloc(ListCtx_t* list_ctx)
 
     DEBUG_LIST_CHECK(list_ctx, "REALLOC_END");
 
+    DPRINTF("\t> End   ListRealloc\n");
+
     return LIST_SUCCESS;
 }
 
@@ -275,7 +302,7 @@ ListErr_t ListRealloc(ListCtx_t* list_ctx)
 
 ListErr_t ListErase(ListCtx_t* list_ctx, int pos)
 {
-    DPRINTF("> Start ListErase data[%d]\n", pos);
+    DPRINTF("> Start ListErase(pos = %d)\n", pos);
 
     DEBUG_LIST_CHECK(list_ctx, "ERASE_START");
 
@@ -307,7 +334,7 @@ ListErr_t ListErase(ListCtx_t* list_ctx, int pos)
 
     DEBUG_LIST_CHECK(list_ctx, "ERASE_END");
 
-    DPRINTF("> End ListErase data[%d]\n\n", pos);
+    DPRINTF("> End   ListErase\n\n");
 
     return LIST_SUCCESS;
 }
@@ -316,7 +343,7 @@ ListErr_t ListErase(ListCtx_t* list_ctx, int pos)
 
 ListErr_t ListDtor(ListCtx_t* list_ctx)
 {
-    DPRINTF("> Start ListDtor\n");
+    DPRINTF("> Start ListDtor()\n");
 
     if (list_ctx == NULL)
     {
