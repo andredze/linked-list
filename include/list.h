@@ -70,8 +70,6 @@ typedef struct NodeCtx
 
 typedef struct ListCtx
 {
-    int         head;
-    int         tail;
     NodeCtx_t*  data;
     size_t      capacity;
     int         free;
@@ -107,7 +105,7 @@ typedef enum ListErr
 //==========================================================================================
 
 const char* const LIST_STR_ERRORS[] =
-    {
+{
     [LIST_SUCCESS]              = "LIST_SUCCESS",
     [LIST_DUMP_ERROR]           = "LIST_DUMP_ERROR",
     [LIST_CALLOC_ERROR]         = "LIST_CALLOC_ERROR",
@@ -125,7 +123,7 @@ const char* const LIST_STR_ERRORS[] =
     [LIST_POSITION_TOO_BIG]     = "LIST_POSITION_TOO_BIG",
     [LIST_NO_SUCH_ELEMENT]      = "LIST_NO_SUCH_ELEMENT",
     [LIST_IS_EMPTY]             = "LIST_IS_EMPTY"
-    };
+};
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 

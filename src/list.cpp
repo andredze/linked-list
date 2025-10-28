@@ -30,18 +30,16 @@ ListErr_t ListCtor(ListCtx_t* list_ctx, size_t capacity)
 
     list_ctx->capacity = capacity;
     list_ctx->free     =  1;
-    list_ctx->head     = -1;
-    list_ctx->tail     = -1;
 
-    /* Filling first element with nulls */
-    list_ctx->data[0].prev = 0;
-    list_ctx->data[0].next = 0; // TODO: LIST_NULL?
+    /* Filling the null element */
+    list_ctx->data[0].prev = 0; /* tail */
+    list_ctx->data[0].next = 0; /* head */ // TODO: LIST_NULL?
     list_ctx->data[0].node = LIST_POISON;
 
     /* Filling the free list */
     for (int i = 1; i < (int) capacity - 1; i++)
     {
-        list_ctx->data[i].prev = -1; // TODO: LIST_PREV_POISON?
+        list_ctx->data[i].prev = -1; // TODO: LIST_PREV_POISON? // TODO: не заполнять вообще?
         list_ctx->data[i].node = LIST_POISON;
         list_ctx->data[i].next = i + 1;
     }
@@ -60,7 +58,7 @@ ListErr_t ListInsertAfter(ListCtx_t* list_ctx, int pos, elem_t value)
 {
     DEBUG_LIST_CHECK(list_ctx, "INSERT_AFTER_START");
 
-    if (list_ctx->head == -1 || list_ctx->tail == -1)
+    if (list_ctx->data[0].next == 0 || list_ctx->data[0].prev == 0)
     {
         PRINTERR("Given list to insert is empty");
         return LIST_IS_EMPTY;
@@ -88,26 +86,22 @@ ListErr_t ListInsertAfter(ListCtx_t* list_ctx, int pos, elem_t value)
         SAFE_CALL(ListRealloc(list_ctx));
     }
 
-    int cur_index = list_ctx->free;
+    int cur_index  = list_ctx->free;
+    int pos_next   = list_ctx->data[pos].next;
 
+    /* set new free element */
     list_ctx->free = list_ctx->data[list_ctx->free].next;
 
-    list_ctx->data[cur_index].node = value;
+    /* connect previous element to current */
+    list_ctx->data[pos].next       = cur_index;
+
+    /* connect current element to previous and next */
     list_ctx->data[cur_index].prev = pos;
+    list_ctx->data[cur_index].node = value;
+    list_ctx->data[cur_index].next = pos_next;
 
-    if (pos == list_ctx->tail)
-    {
-        list_ctx->tail = cur_index;
-        list_ctx->data[cur_index].next = 0;
-    }
-    else
-    {
-        int pos_next = list_ctx->data[pos].next;
-        list_ctx->data[cur_index].next = pos_next;
-        list_ctx->data[pos_next].prev  = cur_index;
-    }
-
-    list_ctx->data[pos].next = cur_index;
+    /* connect next element to current */
+    list_ctx->data[pos_next].prev  = cur_index;
 
     DEBUG_LIST_CHECK(list_ctx, "INSERT_AFTER_END");
 
@@ -120,11 +114,12 @@ ListErr_t ListInsertBefore(ListCtx_t* list_ctx, int pos, elem_t value)
 {
     DEBUG_LIST_CHECK(list_ctx, "INSERT_BEFORE_START");
 
-    if (list_ctx->head == -1 || list_ctx->tail == -1)
+    if (list_ctx->data[0].next == 0 || list_ctx->data[0].prev == 0)
     {
         PRINTERR("Given list to insert is empty");
         return LIST_IS_EMPTY;
     }
+    // TODO: POS_IS_VALID
     if (pos < 0)
     {
         PRINTERR("List position to insert is negative");
@@ -148,26 +143,22 @@ ListErr_t ListInsertBefore(ListCtx_t* list_ctx, int pos, elem_t value)
         SAFE_CALL(ListRealloc(list_ctx));
     }
 
-    int cur_index = list_ctx->free;
+    int cur_index  = list_ctx->free;
+    int pos_prev   = list_ctx->data[pos].prev;
 
+    /* set new free element */
     list_ctx->free = list_ctx->data[list_ctx->free].next;
 
+    /* connect previous element to current */
+    list_ctx->data[pos_prev].next  = cur_index;
+
+    /* connect current element to previous and next */
+    list_ctx->data[cur_index].prev = pos_prev;
     list_ctx->data[cur_index].node = value;
     list_ctx->data[cur_index].next = pos;
 
-    if (pos == list_ctx->head)
-    {
-        list_ctx->head = cur_index;
-        list_ctx->data[cur_index].prev = 0;
-    }
-    else
-    {
-        int pos_prev = list_ctx->data[pos].prev;
-        list_ctx->data[cur_index].prev = pos_prev;
-        list_ctx->data[pos_prev].next  = cur_index;
-    }
-
-    list_ctx->data[pos].prev = cur_index;
+    /* connect next element to current */
+    list_ctx->data[pos].prev       = cur_index;
 
     DEBUG_LIST_CHECK(list_ctx, "INSERT_BEFORE_END");
 
@@ -186,28 +177,21 @@ ListErr_t ListPushFront(ListCtx_t* list_ctx, elem_t value)
     }
 
     int cur_index  = list_ctx->free;
+    int head       = list_ctx->data[0].next;
+
+    /* set new free element */
     list_ctx->free = list_ctx->data[list_ctx->free].next;
 
-    if (list_ctx->head == -1)
-    {
-        list_ctx->head = cur_index;
-        list_ctx->tail = cur_index;
-        list_ctx->data[cur_index].prev = 0;
-        list_ctx->data[cur_index].node = value;
-        list_ctx->data[cur_index].next = 0;
+    /* set new head */
+    list_ctx->data[0].next = cur_index;
 
-        DEBUG_LIST_CHECK(list_ctx, "PUSH_FRONT_END");
-
-        return LIST_SUCCESS;
-    }
-
-    list_ctx->data[list_ctx->head].prev = cur_index;
-
+    /* connect new element to null element and prev head */
     list_ctx->data[cur_index].prev = 0;
     list_ctx->data[cur_index].node = value;
-    list_ctx->data[cur_index].next = list_ctx->head;
+    list_ctx->data[cur_index].next = head;
 
-    list_ctx->head = cur_index;
+    /* connect prev head to new element */
+    list_ctx->data[head].prev = cur_index;
 
     DEBUG_LIST_CHECK(list_ctx, "PUSH_FRONT_END");
 
@@ -226,28 +210,21 @@ ListErr_t ListPushBack(ListCtx_t* list_ctx, elem_t value)
     }
 
     int cur_index  = list_ctx->free;
+    int tail       = list_ctx->data[0].prev;
+
+    /* set new free element */
     list_ctx->free = list_ctx->data[list_ctx->free].next;
 
-    if (list_ctx->tail == -1)
-    {
-        list_ctx->head = cur_index;
-        list_ctx->tail = cur_index;
-        list_ctx->data[cur_index].prev = 0;
-        list_ctx->data[cur_index].node = value;
-        list_ctx->data[cur_index].next = 0;
+    /* set new tail */
+    list_ctx->data[0].prev = cur_index;
 
-        DEBUG_LIST_CHECK(list_ctx, "PUSH_BACK_END");
-
-        return LIST_SUCCESS;
-    }
-
-    list_ctx->data[list_ctx->tail].next = cur_index;
-
-    list_ctx->data[cur_index].prev = list_ctx->tail;
+    /* connect new element to null element and prev tail */
+    list_ctx->data[cur_index].prev = tail;
     list_ctx->data[cur_index].node = value;
     list_ctx->data[cur_index].next = 0;
 
-    list_ctx->tail = cur_index;
+    /* connect prev tail to new element */
+    list_ctx->data[tail].next = cur_index;
 
     DEBUG_LIST_CHECK(list_ctx, "PUSH_BACK_END");
 
@@ -298,51 +275,39 @@ ListErr_t ListRealloc(ListCtx_t* list_ctx)
 
 ListErr_t ListErase(ListCtx_t* list_ctx, int pos)
 {
-    DPRINTF(">Erasing data[%d]:\n", pos);
+    DPRINTF("> Start ListErase data[%d]\n", pos);
+
     DEBUG_LIST_CHECK(list_ctx, "ERASE_START");
+
+    // TODO: Validate pos
 
     int next_ind = list_ctx->data[pos].next;
     int prev_ind = list_ctx->data[pos].prev;
 
+    /* connect pos to free and set poisons */
     list_ctx->data[pos].prev = -1;
     list_ctx->data[pos].node = LIST_POISON;
     list_ctx->data[pos].next = list_ctx->free;
 
     list_ctx->free = pos;
 
-    DPRINTF("\thead = %d;\n\ttail = %d;\n\tpos = %d;\n\n", list_ctx->head, list_ctx->tail, pos);
-
-    if (list_ctx->head == pos && list_ctx->tail == pos)
-    {
-        list_ctx->head = -1;
-        list_ctx->tail = -1;
-
-        DEBUG_LIST_CHECK(list_ctx, "ERASE_END_CASE_ONE_ELEM");
-        return LIST_SUCCESS;
-    }
-    else if (list_ctx->head == pos)
-    {
-        list_ctx->head = next_ind;
-        list_ctx->data[next_ind].prev = 0;
-
-        DEBUG_LIST_CHECK(list_ctx, "ERASE_END_CASE_FIRST_ELEM");
-        return LIST_SUCCESS;
-    }
-    else if (list_ctx->tail == pos)
-    {
-        list_ctx->tail = prev_ind;
-        list_ctx->data[prev_ind].next = 0;
-
-        DEBUG_LIST_CHECK(list_ctx, "ERASE_END_CASE_LAST_ELEM");
-        return LIST_SUCCESS;
-    }
-
-    DPRINTF("\tprev_ind = %d;\n\tnext_ind = %d;\n\n", prev_ind, next_ind);
+    DPRINTF("\thead = %d;\n"
+            "\ttail = %d;\n"
+            "\tpos = %d;\n"
+            "\tprev_ind = %d;\n"
+            "\tnext_ind = %d;\n",
+            list_ctx->data[0].next,
+            list_ctx->data[0].prev,
+            pos,
+            prev_ind,
+            next_ind);
 
     list_ctx->data[prev_ind].next = next_ind;
     list_ctx->data[next_ind].prev = prev_ind;
 
     DEBUG_LIST_CHECK(list_ctx, "ERASE_END");
+
+    DPRINTF("> End ListErase data[%d]\n\n", pos);
 
     return LIST_SUCCESS;
 }
@@ -351,12 +316,16 @@ ListErr_t ListErase(ListCtx_t* list_ctx, int pos)
 
 ListErr_t ListDtor(ListCtx_t* list_ctx)
 {
+    DPRINTF("> Start ListDtor\n");
+
     if (list_ctx == NULL)
     {
         return LIST_CTX_NULL;
     }
 
     free(list_ctx->data);
+
+    DPRINTF("> End   ListDtor\n\n");
 
     return LIST_SUCCESS;
 }
@@ -369,6 +338,8 @@ ListErr_t ListDtor(ListCtx_t* list_ctx)
 
 ListErr_t ListVerify(ListCtx_t* list_ctx)
 {
+    // TODO: проверять вообще все индексы, а не только head и tail
+
     if (list_ctx == NULL)
     {
         return LIST_CTX_NULL;
@@ -377,19 +348,19 @@ ListErr_t ListVerify(ListCtx_t* list_ctx)
     {
         return LIST_DATA_NULL;
     }
-    if (list_ctx->head < -1)
+    if (list_ctx->data[0].next < 0)
     {
         return LIST_HEAD_NEGATIVE;
     }
-    if (list_ctx->head != -1 && (size_t) list_ctx->head >= list_ctx->capacity)
+    if ((size_t) list_ctx->data[0].next >= list_ctx->capacity)
     {
         return LIST_HEAD_TOOBIG;
     }
-    if (list_ctx->tail < -1)
+    if (list_ctx->data[0].prev < 0)
     {
         return LIST_TAIL_NEGATIVE;
     }
-    if (list_ctx->tail != -1 && (size_t) list_ctx->tail >= list_ctx->capacity)
+    if ((size_t) list_ctx->data[0].prev >= list_ctx->capacity)
     {
         return LIST_TAIL_TOOBIG;
     }
@@ -450,10 +421,14 @@ ListErr_t ListDump(ListCtx_t* list_ctx, ListDumpInfo_t* dump_info)
             "head     = %d;\n"
             "tail     = %d;\n"
             "free     = %d;\n",
-            list_ctx->data, list_ctx->capacity, list_ctx->head,
-            list_ctx->tail, list_ctx->free);
+            list_ctx->data,
+            list_ctx->capacity,
+            list_ctx->data[0].next,
+            list_ctx->data[0].prev,
+            list_ctx->free);
 
-    if (!(list_ctx->head < (int) list_ctx->capacity))
+    if (dump_info->error == LIST_HEAD_NEGATIVE ||
+        dump_info->error == LIST_HEAD_TOOBIG)
     {
         fclose(log_stream);
         return LIST_SUCCESS;
@@ -528,22 +503,28 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
     {
         fprintf(stream, "node%zu [style=\"invis\"];\n", list_ctx->capacity - 1);
     }
-    fprintf(stream, "\tnode0[color = \"#3E3A22\", "
-                    "fillcolor = \"#ecede8\", "
-                    "fontcolor = \"#3E3A22\", "
-                    "label=\"{ idx = 0 | value = " SPEC " | { prev = %d | next = %d }}\"];\n",
-            list_ctx->data[0].node, list_ctx->data[0].prev, list_ctx->data[0].next);
+    fprintf(stream,
+            "\tnode0["
+            "color = \"#3E3A22\", "
+            "fillcolor = \"#ecede8\", "
+            "fontcolor = \"#3E3A22\", "
+            "label=\"{ idx = 0 | value = " SPEC " | { prev = %d | next = %d }}\"];\n",
+            list_ctx->data[0].node,
+            list_ctx->data[0].prev,
+            list_ctx->data[0].next);
 
     int skip_main_dump = 0;
 
-    if (!(list_ctx->head >= 0))
+    if (!(list_ctx->data[0].next >= 0))
     {
         skip_main_dump = 1;
     }
 
+// TODO: придумать решение получше
     if (!(skip_main_dump))
     {
-        for (int i = list_ctx->head; i != 0; i = list_ctx->data[i].next)
+    /* make main list nodes */
+        for (int i = list_ctx->data[0].next; i != 0; i = list_ctx->data[i].next)
         {
             fprintf(stream,
                     "\tnode%d[label=\"{ idx = %d | value = " SPEC " | { prev = %d | next = %d }}\"];\n",
@@ -551,7 +532,8 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
         }
         fprintf(stream, "\t");
 
-        int i = list_ctx->head;
+    /* make main list next edges */
+        int i = list_ctx->data[0].next;
         if (list_ctx->data[i].next != 0)
         {
             for (; list_ctx->data[i].next != 0; i = list_ctx->data[i].next)
@@ -560,6 +542,8 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
             }
             fprintf(stream, "node%d [color = \"#640000\"];\n\t", i);
         }
+
+    /* make main list prev edges */
         if (list_ctx->data[i].prev != 0)
         {
             for (; list_ctx->data[i].prev > 0; i = list_ctx->data[i].prev)
@@ -570,20 +554,26 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
         }
     }
 
-    /* free list */
+    /* make free list nodes */
     for (int j = list_ctx->free; j != 0; j = list_ctx->data[j].next)
     {
         fprintf(stream,
-                "\tnode%d[fillcolor=\"#C0FFC0\", "
+                "\tnode%d"
+                "[fillcolor=\"#C0FFC0\", "
                 "color=\"#006400\","
                 "fontcolor = \"#005300\", "
                 "label=\"{ idx = %d | value = " SPEC " | { prev = %d | next = %d }}\"];\n",
-                j, j, list_ctx->data[j].node, list_ctx->data[j].prev, list_ctx->data[j].next);
+                j,
+                j,
+                list_ctx->data[j].node,
+                list_ctx->data[j].prev,
+                list_ctx->data[j].next);
     }
     fprintf(stream, "\t");
 
+    /* make free list edges */
     int j = list_ctx->free;
-    if (list_ctx->data[j].next != 0)
+    if (j != 0 && list_ctx->data[j].next != 0)
     {
         for (; list_ctx->data[j].next != 0; j = list_ctx->data[j].next)
         {
@@ -595,23 +585,26 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
         }
     }
 
+    /* make head, tail, free nodes */
     fprintf(stream, "\tnode [shape=\"box\", color=\"#70421A\", fontcolor=\"#70421A\", fillcolor=\"#DEB887\"];\n"
                     "\ttail; head; free;\n"
                     "\tedge[color=\"#70421A\", arrowhead=none]");
 
-    if (list_ctx->tail >= 0)
+    /* make head, tail and free edges to the elements */
+    if (list_ctx->data[0].prev >= 0)
     {
-        fprintf(stream, "\ttail->node%d;\n", list_ctx->tail);
+        fprintf(stream, "\ttail->node%d;\n", list_ctx->data[0].prev);
     }
-    if (list_ctx->head >= 0)
+    if (list_ctx->data[0].next >= 0)
     {
-        fprintf(stream, "\thead->node%d;\n", list_ctx->head);
+        fprintf(stream, "\thead->node%d;\n", list_ctx->data[0].next);
     }
     fprintf(stream, "\tfree->node%d;\n"
                     "\t{ rank=same; tail; head; free; }\n"
                     "\t{ rank=same; ",
                     list_ctx->free);
 
+    /* place all nodes in one rank */
     for (size_t ind = 0; ind < list_ctx->capacity; ind++)
     {
         fprintf(stream, "node%zu; ", ind);

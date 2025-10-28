@@ -48,8 +48,6 @@ int main()
 
     END;
 
-    DPRINTF(LIGHT_YELLOW ">Destroying list_ctx\n\n" RESET_CLR);
-
     if (ListDtor(&list_ctx))
     {
         return EXIT_FAILURE;
