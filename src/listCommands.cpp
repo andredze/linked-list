@@ -289,6 +289,44 @@ ListErr_t ListErase(List_t* list, int pos)
 
 //------------------------------------------------------------------------------------------
 
+ListErr_t ListGetHead(List_t* list, int* head)
+{
+    DPRINTF("> Start ListGetHead()\n");
+
+    DEBUG_LIST_CHECK(list, "START_GET_HEAD_", 0);
+
+    *head = list->data[0].next;
+
+    DEBUG_LIST_CHECK(list, "END_GET_HEAD_IND=", *head);
+
+    LIST_CALL_DUMP(list, "get_head", "END_GET_HEAD_IND=", *head);
+
+    DPRINTF("> End ListGetHead\n");
+
+    return LIST_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------
+
+ListErr_t ListGetTail(List_t* list, int* tail)
+{
+    DPRINTF("> Start ListGetTail()\n");
+
+    DEBUG_LIST_CHECK(list, "START_GET_TAIL_", 0);
+
+    *tail = list->data[0].prev;
+
+    DEBUG_LIST_CHECK(list, "END_GET_TAIL_IND=", *tail);
+
+    LIST_CALL_DUMP(list, "get_tail", "END_GET_TAIL_IND=", *tail);
+
+    DPRINTF("> End ListGetTail\n");
+
+    return LIST_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------
+
 ListErr_t ListDtor(List_t* list)
 {
     DPRINTF("> Start ListDtor()\n");

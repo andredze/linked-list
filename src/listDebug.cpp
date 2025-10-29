@@ -151,14 +151,8 @@ ListErr_t ListDump(List_t* list, ListDumpInfo_t* dump_info)
 
     FILE* log_stream = NULL;
 
-    if (calls_count == 1)
-    {
-        log_stream = fopen("list_log.htm", "w");
-    }
-    else
-    {
-        log_stream = fopen("list_log.htm", "a");
-    }
+    log_stream = fopen("list_log.htm", calls_count == 1 ? "w" : "a");
+
     calls_count += 1;
 
     if (log_stream == NULL)
@@ -173,18 +167,16 @@ ListErr_t ListDump(List_t* list, ListDumpInfo_t* dump_info)
     if (dump_info->error == LIST_SUCCESS)
     {
         fprintf(log_stream, "<font color=green><b>%s (code %d)</b></font>\n",
-                            LIST_STR_ERRORS[dump_info->error], dump_info->error);
+                LIST_STR_ERRORS[dump_info->error], dump_info->error);
     }
     else
     {
         fprintf(log_stream, "<font color=red><b>ERROR: %s (code %d)</b></font>\n",
-                            LIST_STR_ERRORS[dump_info->error], dump_info->error);
+                LIST_STR_ERRORS[dump_info->error], dump_info->error);
     }
 
-    fprintf(log_stream, "LIST DUMP called from %s at %s:%d\n\n",
-            dump_info->func, dump_info->file, dump_info->line);
-
-    fprintf(log_stream, "list [%p]:\n\n", list);
+    fprintf(log_stream, "LIST DUMP called from %s at %s:%d\n\nlist [%p]:\n\n",
+            dump_info->func, dump_info->file, dump_info->line, list);
 
     if (dump_info->error == LIST_CTX_NULL)
     {
@@ -240,7 +232,7 @@ ListErr_t ListDump(List_t* list, ListDumpInfo_t* dump_info)
 
 ListErr_t ListCreateDumpGraph(List_t* list, const char* image_name)
 {
-    assert(list   != NULL);
+    assert(list != NULL);
 
     if (image_name == NULL)
     {
@@ -256,11 +248,10 @@ ListErr_t ListCreateDumpGraph(List_t* list, const char* image_name)
 // TODO: папка с названием в дату и время - log.html и svg/ dot/
 
     char filename[MAX_FILENAME_LEN] = {};
-    strcpy(filename, "graphs/dot/");
-    strcat(filename, image_name);
-    strcat(filename, ".dot");
+    sprintf(filename, "graphs/dot/%s.dot", image_name);
 
     FILE* fp = fopen(filename, "w");
+
     if (fp == NULL)
     {
         PRINTERR("Opening graph logfile failed");
@@ -279,6 +270,7 @@ ListErr_t ListCreateDumpGraph(List_t* list, const char* image_name)
             "fontcolor = \"#3E3A22\"];\n"
             "\t");
 
+    /* Create invisible edges for all nodes */
     for (size_t i = 0; i < list->capacity - 1; i++)
     {
         fprintf(fp, "node%zu->", i);
@@ -295,7 +287,7 @@ ListErr_t ListCreateDumpGraph(List_t* list, const char* image_name)
             "fillcolor = \"#ecede8\", "
             "fontcolor = \"#3E3A22\", "
             "label=\"{ idx = 0 | value = ");
-    if (list->data[0].value)
+    if (list->data[0].value == LIST_POISON)
     {
         fprintf(fp, "PZN");
     }
@@ -307,55 +299,44 @@ ListErr_t ListCreateDumpGraph(List_t* list, const char* image_name)
             list->data[0].prev,
             list->data[0].next);
 
-    int skip_main_dump = 0;
-
-    if (!(list->data[0].next >= 0))
+    /* make main list nodes */
+    for (int i = list->data[0].next; i > 0; i = list->data[i].next)
     {
-        skip_main_dump = 1;
+        fprintf(fp, "\tnode%d[label=\"{ idx = %d | value = ", i, i);
+        if (list->data[i].value == LIST_POISON)
+        {
+            fprintf(fp, "PZN");
+        }
+        else
+        {
+            fprintf(fp, SPEC, list->data[i].value);
+        }
+        fprintf(fp, " | { prev = %d | next = %d }}\"];\n",
+                list->data[i].prev,
+                list->data[i].next);
     }
 
-// TODO: придумать решение получше
-    if (!(skip_main_dump))
-    {
-    /* make main list nodes */
-        for (int i = list->data[0].next; i != 0; i = list->data[i].next)
-        {
-            fprintf(fp, "\tnode%d[label=\"{ idx = %d | value = ", i, i);
-            if (list->data[i].value == LIST_POISON)
-            {
-                fprintf(fp, "PZN");
-            }
-            else
-            {
-                fprintf(fp, SPEC, list->data[i].value);
-            }
-            fprintf(fp, " | { prev = %d | next = %d }}\"];\n",
-                    list->data[i].prev,
-                    list->data[i].next);
-        }
-
     /* make main list next edges */
-        int i = list->data[0].next;
-        if (list->data[i].next != 0)
+    int i = list->data[0].next;
+    if (i > 0 && list->data[i].next != 0)
+    {
+        fprintf(fp, "\t");
+        for (; list->data[i].next != 0; i = list->data[i].next)
         {
-            fprintf(fp, "\t");
-            for (; list->data[i].next != 0; i = list->data[i].next)
-            {
-                fprintf(fp, "node%d->", i);
-            }
-            fprintf(fp, "node%d [color = \"#640000\"];\n", i);
+            fprintf(fp, "node%d->", i);
         }
+        fprintf(fp, "node%d [color = \"#640000\"];\n", i);
+    }
 
     /* make main list prev edges */
-        if (list->data[i].prev > 0)
+    if (i > 0 && list->data[i].prev > 0)
+    {
+        fprintf(fp, "\t");
+        for (; list->data[i].prev > 0; i = list->data[i].prev)
         {
-            fprintf(fp, "\t");
-            for (; list->data[i].prev > 0; i = list->data[i].prev)
-            {
-                fprintf(fp, "node%d->", i);
-            }
-            fprintf(fp, "node%d [color = \"#000064\"];\n", i);
+            fprintf(fp, "node%d->", i);
         }
+        fprintf(fp, "node%d [color = \"#000064\"];\n", i);
     }
 
     /* make free list nodes */
