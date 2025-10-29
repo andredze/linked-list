@@ -12,53 +12,55 @@ int main()
 
     BEGIN
 
+    int insert_pos = 0;
+
     if (ListCtor        (&list, 4))
         break;
-    LIST_CALL_DUMP(&list, "ctor",    "TEST_AFTER_CTOR");
+    LIST_CALL_DUMP(&list, "ctor", "TEST_AFTER_CTOR");
 
-    if (ListPushFront   (&list, 100))
+    if (ListPushFront   (&list, 100, &insert_pos))
         break;
-    LIST_CALL_DUMP(&list, "front1",  "TEST_PUSH_FRONT_1");
+    LIST_CALL_DUMP(&list, "front",  "TEST_PUSH_FRONT_1");
 
-    if (ListInsertAfter (&list, 1, 20))
+    if (ListInsertAfter (&list, 0, 20, &insert_pos))
         break;
-    LIST_CALL_DUMP(&list, "insert1", "TEST_INSERT_AFTER_1");
+    LIST_CALL_DUMP(&list, "insert", "TEST_INSERT_AFTER_1");
 
-    if (ListInsertAfter (&list, 2, 30))
+    if (ListInsertAfter (&list, 2, 30, &insert_pos))
         break;
-    LIST_CALL_DUMP(&list, "insert2", "TEST_INSERT_AFTER_2");
+    LIST_CALL_DUMP(&list, "insert", "TEST_INSERT_AFTER_2");
 
-    if (ListInsertAfter (&list, 1, 25))
+    if (ListInsertAfter (&list, 1, 25, &insert_pos))
         break;
-    LIST_CALL_DUMP(&list, "insert3", "TEST_INSERT_AFTER_3");
+    LIST_CALL_DUMP(&list, "insert", "TEST_INSERT_AFTER_3");
 
     if (ListErase       (&list, 2))
         break;
-    LIST_CALL_DUMP(&list, "erase1", "TEST_ERASE_1");
+    LIST_CALL_DUMP(&list, "erase", "TEST_ERASE_1");
 
     if (ListErase       (&list, 1))
         break;
-    LIST_CALL_DUMP(&list, "erase2", "TEST_ERASE_2");
+    LIST_CALL_DUMP(&list, "erase", "TEST_ERASE_2");
 
     if (ListErase       (&list, 3))
         break;
-    LIST_CALL_DUMP(&list, "erase3", "TEST_ERASE_3");
+    LIST_CALL_DUMP(&list, "erase", "TEST_ERASE_3");
 
     if (ListErase       (&list, 4))
         break;
-    LIST_CALL_DUMP(&list, "erase4", "TEST_ERASE_4");
+    LIST_CALL_DUMP(&list, "erase", "TEST_ERASE_4");
 
-    if (ListPushFront   (&list, 666))
+    if (ListPushFront   (&list, 666, &insert_pos))
         break;
-    LIST_CALL_DUMP(&list, "front2",  "TEST_PUSH_FRONT_2");
+    LIST_CALL_DUMP(&list, "front",  "TEST_PUSH_FRONT_2");
 
-    if (ListPushBack    (&list, 6471))
+    if (ListPushBack    (&list, 6471, &insert_pos))
         break;
-    LIST_CALL_DUMP(&list, "back1",   "TEST_PUSH_BACK_1");
+    LIST_CALL_DUMP(&list, "back",   "TEST_PUSH_BACK_1");
 
-    if (ListInsertBefore(&list, 4, 22))
+    if (ListInsertBefore(&list, 0, 22, &insert_pos))
         break;
-    LIST_CALL_DUMP(&list, "insert4", "TEST_INSERT_BEFORE_4");
+    LIST_CALL_DUMP(&list, "insert", "TEST_INSERT_BEFORE_4");
 
     END;
 

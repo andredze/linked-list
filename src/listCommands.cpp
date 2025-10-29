@@ -55,6 +55,8 @@ ListErr_t ListCtor(List_t* list, size_t capacity)
     list->data[capacity - 1].value = LIST_POISON;
     list->data[capacity - 1].next = 0;
 
+    LIST_CALL_DUMP(list, "ctor", "TEST_AFTER_CTOR");
+
     DPRINTF("> End   ListCtor\n\n");
 
     return LIST_SUCCESS;
@@ -82,17 +84,11 @@ ListErr_t ListCheckPos(List_t* list, int pos)
 
 //------------------------------------------------------------------------------------------
 
-ListErr_t ListInsertAfter(List_t* list, int pos, elem_t value)
+ListErr_t ListInsertAfter(List_t* list, int pos, elem_t value, int* insert_pos)
 {
     DPRINTF("> Start ListInsertAfter(pos = %d, value = " SPEC ")\n", pos, value);
 
     DEBUG_LIST_CHECK(list, "INSERT_AFTER_START");
-
-    if (list->data[0].next == 0 || list->data[0].prev == 0)
-    {
-        PRINTERR("Given list to insert is empty");
-        return LIST_IS_EMPTY;
-    }
 
     ListErr_t error = LIST_SUCCESS;
     if ((error = ListCheckPos(list, pos)) != LIST_SUCCESS)
@@ -132,6 +128,8 @@ ListErr_t ListInsertAfter(List_t* list, int pos, elem_t value)
     /* connect next element to current */
     list->data[pos_next].prev  = cur_index;
 
+    *insert_pos = cur_index;
+
     DEBUG_LIST_CHECK(list, "INSERT_AFTER_END");
 
     DPRINTF("> End   ListInsertAfter\n\n");
@@ -141,17 +139,11 @@ ListErr_t ListInsertAfter(List_t* list, int pos, elem_t value)
 
 //------------------------------------------------------------------------------------------
 
-ListErr_t ListInsertBefore(List_t* list, int pos, elem_t value)
+ListErr_t ListInsertBefore(List_t* list, int pos, elem_t value, int* insert_pos)
 {
     DPRINTF("> Start ListInsertBefore(pos = %d, value = " SPEC ")\n", pos, value);
 
     DEBUG_LIST_CHECK(list, "INSERT_BEFORE_START");
-
-    if (list->data[0].next == 0 || list->data[0].prev == 0)
-    {
-        PRINTERR("Given list to insert is empty");
-        return LIST_IS_EMPTY;
-    }
 
     ListErr_t error = LIST_SUCCESS;
     if ((error = ListCheckPos(list, pos)) != LIST_SUCCESS)
@@ -191,6 +183,8 @@ ListErr_t ListInsertBefore(List_t* list, int pos, elem_t value)
     /* connect next element to current */
     list->data[pos].prev       = cur_index;
 
+    *insert_pos = cur_index;
+
     DEBUG_LIST_CHECK(list, "INSERT_BEFORE_END");
 
     DPRINTF("> End   ListInsertBefore\n\n");
@@ -200,7 +194,7 @@ ListErr_t ListInsertBefore(List_t* list, int pos, elem_t value)
 
 //------------------------------------------------------------------------------------------
 
-ListErr_t ListPushFront(List_t* list, elem_t value)
+ListErr_t ListPushFront(List_t* list, elem_t value, int* insert_pos)
 {
     DPRINTF("> Start ListPushFront(value = " SPEC ")\n", value);
 
@@ -225,12 +219,14 @@ ListErr_t ListPushFront(List_t* list, elem_t value)
     list->data[0].next = cur_index;
 
     /* connect new element to null element and prev head */
-    list->data[cur_index].prev = 0;
+    list->data[cur_index].prev  = 0;
     list->data[cur_index].value = value;
-    list->data[cur_index].next = head;
+    list->data[cur_index].next  = head;
 
     /* connect prev head to new element */
     list->data[head].prev = cur_index;
+
+    *insert_pos = cur_index;
 
     DEBUG_LIST_CHECK(list, "PUSH_FRONT_END");
 
@@ -241,7 +237,7 @@ ListErr_t ListPushFront(List_t* list, elem_t value)
 
 //------------------------------------------------------------------------------------------
 
-ListErr_t ListPushBack(List_t* list, elem_t value)
+ListErr_t ListPushBack(List_t* list, elem_t value, int* insert_pos)
 {
     DPRINTF("> Start ListPushBack(value = " SPEC ")\n", value);
 
@@ -272,6 +268,8 @@ ListErr_t ListPushBack(List_t* list, elem_t value)
 
     /* connect prev tail to new element */
     list->data[tail].next = cur_index;
+
+    *insert_pos = cur_index;
 
     DEBUG_LIST_CHECK(list, "PUSH_BACK_END");
 
