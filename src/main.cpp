@@ -10,7 +10,7 @@ int main()
 
     BEGIN
 
-    MAIN_CALL(ListCtor        (&list_ctx, 2));
+    MAIN_CALL(ListCtor        (&list_ctx, 8));
     LIST_CALL_DUMP(&list_ctx, "ctor",    "TEST_AFTER_CTOR");
 
     MAIN_CALL(ListPushFront   (&list_ctx, 100));

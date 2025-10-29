@@ -93,6 +93,15 @@ typedef enum ListErr
     LIST_HEAD_TOOBIG,
     LIST_TAIL_NEGATIVE,
     LIST_TAIL_TOOBIG,
+    LIST_FREE_NEGATIVE,
+    LIST_FREE_TOOBIG,
+    LIST_NEXT_NEGATIVE,
+    LIST_NEXT_TOOBIG,
+    LIST_PREV_NEGATIVE,
+    LIST_PREV_TOOBIG,
+    LIST_FREE_NEXT_NEGATIVE,
+    LIST_FREE_NEXT_TOOBIG,
+    LIST_FREE_PREV_NOT_NULL,
     LIST_POSITION_NEGATIVE,
     LIST_POSITION_TOO_BIG,
     LIST_NO_SUCH_ELEMENT,
@@ -120,6 +129,15 @@ const char* const LIST_STR_ERRORS[] =
     [LIST_HEAD_TOOBIG]          = "LIST_HEAD_TOOBIG",
     [LIST_TAIL_NEGATIVE]        = "LIST_TAIL_NEGATIVE",
     [LIST_TAIL_TOOBIG]          = "LIST_TAIL_TOOBIG",
+    [LIST_FREE_NEGATIVE]        = "LIST_FREE_NEGATIVE",
+    [LIST_FREE_TOOBIG]          = "LIST_FREE_TOOBIG",
+    [LIST_NEXT_NEGATIVE]        = "LIST_NEXT_NEGATIVE",
+    [LIST_NEXT_TOOBIG]          = "LIST_NEXT_TOOBIG",
+    [LIST_PREV_NEGATIVE]        = "LIST_PREV_NEGATIVE",
+    [LIST_PREV_TOOBIG]          = "LIST_PREV_TOOBIG",
+    [LIST_FREE_NEXT_NEGATIVE]   = "LIST_FREE_NEXT_NEGATIVE",
+    [LIST_FREE_NEXT_TOOBIG]     = "LIST_FREE_NEXT_TOOBIG",
+    [LIST_FREE_PREV_NOT_NULL]   = "LIST_FREE_PREV_NOT_NULL",
     [LIST_POSITION_NEGATIVE]    = "LIST_POSITION_NEGATIVE",
     [LIST_POSITION_TOO_BIG]     = "LIST_POSITION_TOO_BIG",
     [LIST_NO_SUCH_ELEMENT]      = "LIST_NO_SUCH_ELEMENT",
@@ -151,7 +169,6 @@ const size_t LIST_MAX_CAPACITY = 1024 * 1024 * 1024;
 
 ListErr_t ListCtor            (ListCtx_t* list_ctx, size_t capacity);
 ListErr_t ListDtor            (ListCtx_t* list_ctx);
-ListErr_t ListRealloc         (ListCtx_t* list_ctx);
 ListErr_t ListErase           (ListCtx_t* list_ctx, int pos);
 ListErr_t ListCheckPos        (ListCtx_t* list_ctx, int pos);
 ListErr_t ListInsertAfter     (ListCtx_t* list_ctx, int pos, elem_t value);

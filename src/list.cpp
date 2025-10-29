@@ -2,6 +2,10 @@
 
 //------------------------------------------------------------------------------------------
 
+static ListErr_t ListRealloc(ListCtx_t* list_ctx);
+
+//------------------------------------------------------------------------------------------
+
 ListErr_t ListCtor(ListCtx_t* list_ctx, size_t capacity)
 {
     DPRINTF("> Start ListCtor(capacity = %zu)\n", capacity);
@@ -256,7 +260,7 @@ ListErr_t ListPushBack(ListCtx_t* list_ctx, elem_t value)
 
 //------------------------------------------------------------------------------------------
 
-ListErr_t ListRealloc(ListCtx_t* list_ctx)
+static ListErr_t ListRealloc(ListCtx_t* list_ctx)
 {
     DPRINTF("\t> Start ListRealloc()\n");
 
@@ -397,6 +401,61 @@ ListErr_t ListVerify(ListCtx_t* list_ctx)
     {
         return LIST_TAIL_TOOBIG;
     }
+    if (list_ctx->free < 0)
+    {
+        return LIST_FREE_NEGATIVE;
+    }
+    if ((size_t) list_ctx->free >= list_ctx->capacity)
+    {
+        return LIST_FREE_TOOBIG;
+    }
+    for (int i = list_ctx->data[0].next; i != 0; i = list_ctx->data[i].next)
+    {
+        // NOTE: надо ли?
+        // NOTE: может ли быть бесконечный цикл? наверное да
+        // if (list_ctx->data[i].node == LIST_POISON)
+        // {
+        //     return LIST_FILLED_VALUE_IS_PZN;
+        // }
+        if (list_ctx->data[i].next < 0)
+        {
+            return LIST_NEXT_NEGATIVE;
+        }
+        if ((size_t) list_ctx->data[i].next >= list_ctx->capacity)
+        {
+            return LIST_NEXT_TOOBIG;
+        }
+        if (list_ctx->data[i].prev < 0)
+        {
+            return LIST_PREV_NEGATIVE;
+        }
+        if ((size_t) list_ctx->data[i].prev >= list_ctx->capacity)
+        {
+            return LIST_PREV_TOOBIG;
+        }
+    }
+
+    for (int i = list_ctx->free; i != 0; i = list_ctx->data[i].next)
+    {
+        // NOTE: может ли быть бесконечный цикл? наверное да
+        // NOTE: надо ли?
+        // if (list_ctx->data[i].node != LIST_POISON)
+        // {
+        //     return LIST_FREE_VALUE_NOT_PZN;
+        // }
+        if (list_ctx->data[i].next < 0)
+        {
+            return LIST_FREE_NEXT_NEGATIVE;
+        }
+        if ((size_t) list_ctx->data[i].next >= list_ctx->capacity)
+        {
+            return LIST_FREE_NEXT_TOOBIG;
+        }
+        if (list_ctx->data[i].prev != -1)
+        {
+            return LIST_FREE_PREV_NOT_NULL;
+        }
+    }
 
     return LIST_SUCCESS;
 }
@@ -506,7 +565,6 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
         PRINTERR("Too big filename for graph image");
         return LIST_GRAPH_ERROR;
     }
-// TODO: svg and not png
 
 // TODO: static переменная в дампе - номера картинок не пересекаются - папка с названием в дату и время - log.html и svg/ dot/
     char filename[MAX_FILENAME_LEN] = {};
@@ -625,7 +683,10 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
     }
 
     /* make head, tail, free nodes */
-    fprintf(stream, "\tnode [shape=\"box\", color=\"#70421A\", fontcolor=\"#70421A\", fillcolor=\"#DEB887\"];\n"
+    fprintf(stream, "\tnode [shape=\"box\", "
+                    "color=\"#70421A\", "
+                    "fontcolor=\"#70421A\", "
+                    "fillcolor=\"#DEB887\"];\n"
                     "\ttail; head; free;\n"
                     "\tedge[color=\"#70421A\", arrowhead=none]");
 
