@@ -152,7 +152,7 @@ ListErr_t ListDump(List_t* list, ListDumpInfo_t* dump_info)
     static int calls_count = 1;
 
     char image_name[MAX_FILENAME_LEN] = {};
-    sprintf(image_name, "%s%04d", dump_info->image_name, calls_count);
+    sprintf(image_name, "%04d_%s", calls_count, dump_info->image_name);
 
     FILE* log_stream = NULL;
 
@@ -255,8 +255,7 @@ ListErr_t ListCreateDumpGraph(List_t* list, const char* image_name)
         return LIST_FILENAME_TOOBIG;
     }
 
-// TODO: static переменная в дампе - номера картинок не пересекаются -
-// папка с названием в дату и время - log.html и svg/ dot/
+// TODO: папка с названием в дату и время - log.html и svg/ dot/
 
     char filename[MAX_FILENAME_LEN] = {};
     strcpy(filename, "graphs/dot/");
