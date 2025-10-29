@@ -19,7 +19,7 @@
         if (ListDump(list_ptr, &dump_info))                                             \
         {                                                                               \
             ListDtor(list_ptr);                                                         \
-            return EXIT_FAILURE;                                                        \
+            return LIST_DUMP_ERROR;                                                     \
         }                                                                               \
         END
 
@@ -81,7 +81,6 @@ typedef enum ListErr
     LIST_POSITION_NEGATIVE,
     LIST_POSITION_TOO_BIG,
     LIST_NO_SUCH_ELEMENT,
-    LIST_IS_EMPTY,
     LIST_MAIN_IS_CYCLED,
     LIST_FREE_IS_CYCLED,
     LIST_FREE_VALUE_NOT_PZN,
@@ -122,7 +121,6 @@ const char* const LIST_STR_ERRORS[] =
     [LIST_POSITION_NEGATIVE]    = "LIST_POSITION_NEGATIVE",
     [LIST_POSITION_TOO_BIG]     = "LIST_POSITION_TOO_BIG",
     [LIST_NO_SUCH_ELEMENT]      = "LIST_NO_SUCH_ELEMENT",
-    [LIST_IS_EMPTY]             = "LIST_IS_EMPTY",
     [LIST_MAIN_IS_CYCLED]       = "LIST_MAIN_IS_CYCLED",
     [LIST_FREE_IS_CYCLED]       = "LIST_FREE_IS_CYCLED",
     [LIST_FREE_VALUE_NOT_PZN]   = "LIST_FREE_VALUE_NOT_PZN",

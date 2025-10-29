@@ -149,18 +149,22 @@ ListErr_t ListDump(List_t* list, ListDumpInfo_t* dump_info)
 // TODO: fix dump when capacity is bad
 // TODO: fix dump when LIST_MAIN_IS_CYCLED
 
-    static int is_first_dump = 1;
+    static int calls_count = 1;
+
+    char image_name[MAX_FILENAME_LEN] = {};
+    sprintf(image_name, "%s%04d", dump_info->image_name, calls_count);
+
     FILE* log_stream = NULL;
 
-    if (is_first_dump)
+    if (calls_count == 1)
     {
         log_stream    = fopen("list_log.htm", "w");
-        is_first_dump = 0;
     }
     else
     {
         log_stream = fopen("list_log.htm", "a");
     }
+    calls_count += 1;
 
     if (log_stream == NULL)
     {
@@ -220,13 +224,13 @@ ListErr_t ListDump(List_t* list, ListDumpInfo_t* dump_info)
     }
 
     ListErr_t graph_error = LIST_SUCCESS;
-    if ((graph_error = ListCreateDumpGraph(list, dump_info->image_name)))
+    if ((graph_error = ListCreateDumpGraph(list, image_name)))
     {
         fclose(log_stream);
         return graph_error;
     }
 
-    fprintf(log_stream, "\n<img src = graphs/svg/%s.svg width = 100%%>\n\n", dump_info->image_name);
+    fprintf(log_stream, "\n<img src = graphs/svg/%s.svg width = 100%%>\n\n", image_name);
 
     fclose(log_stream);
 
