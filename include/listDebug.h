@@ -12,10 +12,10 @@
 
 //==========================================================================================
 
-#define LIST_CALL_DUMP(list_ptr, name, message)                                         \
+#define LIST_CALL_DUMP(list_ptr, name, message, arg)                                    \
         BEGIN                                                                           \
         ListDumpInfo_t dump_info = {LIST_SUCCESS, name, message, __PRETTY_FUNCTION__,   \
-                                    __FILE__, __LINE__};                                \
+                                    __FILE__, __LINE__, arg};                           \
         if (ListDump(list_ptr, &dump_info))                                             \
         {                                                                               \
             ListDtor(list_ptr);                                                         \
@@ -23,7 +23,7 @@
         }                                                                               \
         END
 
-#define DEBUG_LIST_CHECK(list, reason)                                                  \
+#define DEBUG_LIST_CHECK(list, reason, arg)                                             \
         BEGIN                                                                           \
         ListErr_t verify_status = LIST_SUCCESS;                                         \
         if ((verify_status = ListVerify(list)))                                         \
@@ -31,7 +31,7 @@
             PRINTERR("%s (ListVerify not passed! Check \"list_log.htm\")",              \
                      LIST_STR_ERRORS[verify_status]);                                   \
             ListDumpInfo_t dump_info = {verify_status, "err_dump", reason,              \
-                                        __PRETTY_FUNCTION__, __FILE__, __LINE__};       \
+                                        __PRETTY_FUNCTION__, __FILE__, __LINE__, arg};  \
             if (ListDump(list, &dump_info))                                             \
             {                                                                           \
                 return LIST_DUMP_ERROR;                                                 \
@@ -44,8 +44,8 @@
 
 #else
 
-#define LIST_CALL_DUMP(list_ptr, name, message)    ;
-#define DEBUG_LIST_CHECK(list, reason)             ;
+#define LIST_CALL_DUMP(list_ptr, name, message, arg)    ;
+#define DEBUG_LIST_CHECK(list, reason, arg)             ;
 
 //==========================================================================================
 
@@ -137,6 +137,7 @@ typedef struct ListDumpInfo
     const char* func;
     const char* file;
     int         line;
+    int         command_arg;
 } ListDumpInfo_t;
 
 //——————————————————————————————————————————————————————————————————————————————————————————

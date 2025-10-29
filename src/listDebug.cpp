@@ -158,7 +158,7 @@ ListErr_t ListDump(List_t* list, ListDumpInfo_t* dump_info)
 
     if (calls_count == 1)
     {
-        log_stream    = fopen("list_log.htm", "w");
+        log_stream = fopen("list_log.htm", "w");
     }
     else
     {
@@ -172,7 +172,8 @@ ListErr_t ListDump(List_t* list, ListDumpInfo_t* dump_info)
         return LIST_LOGFILE_OPEN_ERROR;
     }
 
-    fprintf(log_stream, "<pre>\n<h3><font color=blue>%s</font></h3>", dump_info->reason);
+    fprintf(log_stream, "<pre>\n<h3><font color=blue>%s%d</font></h3>",
+            dump_info->reason, dump_info->command_arg);
 
     if (dump_info->error == LIST_SUCCESS)
     {

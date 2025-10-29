@@ -55,7 +55,7 @@ ListErr_t ListCtor(List_t* list, size_t capacity)
     list->data[capacity - 1].value = LIST_POISON;
     list->data[capacity - 1].next = 0;
 
-    LIST_CALL_DUMP(list, "ctor", "TEST_AFTER_CTOR");
+    LIST_CALL_DUMP(list, "ctor", "DUMP_CTOR_CAP=", (int) capacity);
 
     DPRINTF("> End   ListCtor\n\n");
 
@@ -88,7 +88,7 @@ ListErr_t ListInsertAfter(List_t* list, int pos, elem_t value, int* insert_pos)
 {
     DPRINTF("> Start ListInsertAfter(pos = %d, value = " SPEC ")\n", pos, value);
 
-    DEBUG_LIST_CHECK(list, "INSERT_AFTER_START");
+    DEBUG_LIST_CHECK(list, "START_INSERT_AFTER_", pos);
 
     ListErr_t error = LIST_SUCCESS;
     if ((error = ListCheckPos(list, pos)) != LIST_SUCCESS)
@@ -130,7 +130,9 @@ ListErr_t ListInsertAfter(List_t* list, int pos, elem_t value, int* insert_pos)
 
     *insert_pos = cur_index;
 
-    DEBUG_LIST_CHECK(list, "INSERT_AFTER_END");
+    DEBUG_LIST_CHECK(list, "END_INSERT_AFTER_", pos);
+
+    LIST_CALL_DUMP(list, "insert", "DUMP_INSERT_AFTER_", pos);
 
     DPRINTF("> End   ListInsertAfter\n\n");
 
@@ -143,7 +145,7 @@ ListErr_t ListInsertBefore(List_t* list, int pos, elem_t value, int* insert_pos)
 {
     DPRINTF("> Start ListInsertBefore(pos = %d, value = " SPEC ")\n", pos, value);
 
-    DEBUG_LIST_CHECK(list, "INSERT_BEFORE_START");
+    DEBUG_LIST_CHECK(list, "START_INSERT_BEFORE_", pos);
 
     ListErr_t error = LIST_SUCCESS;
     if ((error = ListCheckPos(list, pos)) != LIST_SUCCESS)
@@ -185,7 +187,9 @@ ListErr_t ListInsertBefore(List_t* list, int pos, elem_t value, int* insert_pos)
 
     *insert_pos = cur_index;
 
-    DEBUG_LIST_CHECK(list, "INSERT_BEFORE_END");
+    DEBUG_LIST_CHECK(list, "END_INSERT_BEFORE_", pos);
+
+    LIST_CALL_DUMP(list, "insert", "DUMP_INSERT_BEFORE_", pos);
 
     DPRINTF("> End   ListInsertBefore\n\n");
 
@@ -198,7 +202,7 @@ ListErr_t ListPushFront(List_t* list, elem_t value, int* insert_pos)
 {
     DPRINTF("> Start ListPushFront(value = " SPEC ")\n", value);
 
-    DEBUG_LIST_CHECK(list, "PUSH_FRONT_START");
+    DEBUG_LIST_CHECK(list, "PUSH_FRONT_START_VALUE=", value);
 
     ListErr_t error = LIST_SUCCESS;
     if (list->free == 0)
@@ -228,7 +232,9 @@ ListErr_t ListPushFront(List_t* list, elem_t value, int* insert_pos)
 
     *insert_pos = cur_index;
 
-    DEBUG_LIST_CHECK(list, "PUSH_FRONT_END");
+    DEBUG_LIST_CHECK(list, "PUSH_FRONT_END_INSPOS=", *insert_pos);
+
+    LIST_CALL_DUMP(list, "front", "DUMP_PUSH_FRONT_INSPOS=", *insert_pos);
 
     DPRINTF("> End   ListPushFront\n\n");
 
@@ -241,7 +247,7 @@ ListErr_t ListPushBack(List_t* list, elem_t value, int* insert_pos)
 {
     DPRINTF("> Start ListPushBack(value = " SPEC ")\n", value);
 
-    DEBUG_LIST_CHECK(list, "PUSH_BACK_START");
+    DEBUG_LIST_CHECK(list, "PUSH_BACK_START_VALUE=", value);
 
     ListErr_t error = LIST_SUCCESS;
     if (list->free == 0)
@@ -271,7 +277,9 @@ ListErr_t ListPushBack(List_t* list, elem_t value, int* insert_pos)
 
     *insert_pos = cur_index;
 
-    DEBUG_LIST_CHECK(list, "PUSH_BACK_END");
+    DEBUG_LIST_CHECK(list, "PUSH_BACK_END_INSPOS=", *insert_pos);
+
+    LIST_CALL_DUMP(list, "back", "DUMP_PUSH_BACK_INSPOS=", *insert_pos);
 
     DPRINTF("> End   ListPushBack\n\n");
 
@@ -284,7 +292,7 @@ static ListErr_t ListRealloc(List_t* list)
 {
     DPRINTF("\t> Start ListRealloc()\n");
 
-    DEBUG_LIST_CHECK(list, "REALLOC_START");
+    DEBUG_LIST_CHECK(list, "REALLOC_START_OLDCAP=", (int) list->capacity);
 
     size_t new_size = sizeof(list->data[0]) * (list->capacity * 2 + 1);
 
@@ -315,7 +323,7 @@ static ListErr_t ListRealloc(List_t* list)
     list->data[list->capacity - 1].value = LIST_POISON;
     list->data[list->capacity - 1].next = 0;
 
-    DEBUG_LIST_CHECK(list, "REALLOC_END");
+    DEBUG_LIST_CHECK(list, "REALLOC_END_OLDCAP=", (int) list->capacity);
 
     DPRINTF("\t> End   ListRealloc\n");
 
@@ -328,7 +336,7 @@ ListErr_t ListErase(List_t* list, int pos)
 {
     DPRINTF("> Start ListErase(pos = %d)\n", pos);
 
-    DEBUG_LIST_CHECK(list, "ERASE_START");
+    DEBUG_LIST_CHECK(list, "START_ERASE_", pos);
 
     ListErr_t error = LIST_SUCCESS;
     if ((error = ListCheckPos(list, pos)) != LIST_SUCCESS)
@@ -360,7 +368,9 @@ ListErr_t ListErase(List_t* list, int pos)
     list->data[prev_ind].next = next_ind;
     list->data[next_ind].prev = prev_ind;
 
-    DEBUG_LIST_CHECK(list, "ERASE_END");
+    DEBUG_LIST_CHECK(list, "END_ERASE_", pos);
+
+    LIST_CALL_DUMP(list, "erase", "DUMP_ERASE_", pos);
 
     DPRINTF("> End   ListErase\n\n");
 
