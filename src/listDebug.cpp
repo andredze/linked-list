@@ -144,11 +144,6 @@ int LinearSearch(int* array, size_t size, int elem)
 
 ListErr_t ListDump(List_t* list, ListDumpInfo_t* dump_info)
 {
-
-// TODO: test dump with all errors
-// TODO: fix dump when capacity is bad
-// TODO: fix dump when LIST_MAIN_IS_CYCLED
-
     static int calls_count = 1;
 
     char image_name[MAX_FILENAME_LEN] = {};
@@ -217,8 +212,11 @@ ListErr_t ListDump(List_t* list, ListDumpInfo_t* dump_info)
             list->data[0].next,
             list->data[0].prev);
 
-    if (dump_info->error == LIST_HEAD_NEGATIVE ||
-        dump_info->error == LIST_HEAD_TOOBIG)
+    if (dump_info->error == LIST_HEAD_NEGATIVE        ||
+        dump_info->error == LIST_HEAD_TOOBIG          ||
+        dump_info->error == LIST_CAPACITY_EXCEEDS_MAX ||
+        dump_info->error == LIST_MAIN_IS_CYCLED       ||
+        dump_info->error == LIST_FREE_IS_CYCLED)
     {
         fclose(log_stream);
         return LIST_SUCCESS;
@@ -335,22 +333,23 @@ ListErr_t ListCreateDumpGraph(List_t* list, const char* image_name)
                     list->data[i].prev,
                     list->data[i].next);
         }
-        fprintf(fp, "\t");
 
     /* make main list next edges */
         int i = list->data[0].next;
         if (list->data[i].next != 0)
         {
+            fprintf(fp, "\t");
             for (; list->data[i].next != 0; i = list->data[i].next)
             {
                 fprintf(fp, "node%d->", i);
             }
-            fprintf(fp, "node%d [color = \"#640000\"];\n\t", i);
+            fprintf(fp, "node%d [color = \"#640000\"];\n", i);
         }
 
     /* make main list prev edges */
-        if (list->data[i].prev != 0)
+        if (list->data[i].prev > 0)
         {
+            fprintf(fp, "\t");
             for (; list->data[i].prev > 0; i = list->data[i].prev)
             {
                 fprintf(fp, "node%d->", i);
@@ -365,7 +364,7 @@ ListErr_t ListCreateDumpGraph(List_t* list, const char* image_name)
         fprintf(fp,
                 "\tnode%d"
                 "[fillcolor=\"#C0FFC0\", "
-                "color=\"#006400\","
+                "color=\"#006400\", "
                 "fontcolor = \"#005300\", "
                 "label=\"{ idx = %d | value = ",
                 j, j);
@@ -381,12 +380,12 @@ ListErr_t ListCreateDumpGraph(List_t* list, const char* image_name)
                 list->data[j].prev,
                 list->data[j].next);
     }
-    fprintf(fp, "\t");
 
     /* make free list edges */
     int j = list->free;
     if (j != 0 && list->data[j].next != 0)
     {
+        fprintf(fp, "\t");
         for (; list->data[j].next != 0; j = list->data[j].next)
         {
             fprintf(fp, "node%d->", j);

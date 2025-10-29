@@ -46,7 +46,7 @@ ListErr_t ListCtor(List_t* list, size_t capacity)
     for (int i = 1; i < (int) capacity - 1; i++)
     {
         list->data[i].prev = -1;
-        list->data[i].value = LIST_POISON; // TODO: не заполнять вообще? или только в дебажной версии?
+        list->data[i].value = LIST_POISON;
         list->data[i].next = i + 1;
     }
 

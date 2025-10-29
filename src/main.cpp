@@ -23,6 +23,8 @@ int main()
     if (ListInsertAfter (&list, 0, 20, &insert_pos))
         break;
 
+    list.capacity = -1;
+
     if (ListInsertAfter (&list, insert_pos, 30, &insert_pos))
         break;
 
