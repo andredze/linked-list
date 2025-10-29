@@ -17,13 +17,11 @@ int main()
     if (ListCtor        (&list, 4))
         break;
 
-    if (ListPushFront   (&list, 100,   &insert_pos))
+    if (ListInsertAfter (&list, 0, 100, &insert_pos))
         break;
 
-    if (ListInsertAfter (&list, 0, 20, &insert_pos))
+    if (ListInsertAfter (&list, 0, 20,  &insert_pos))
         break;
-
-    list.capacity = -1;
 
     if (ListInsertAfter (&list, insert_pos, 30, &insert_pos))
         break;
@@ -43,10 +41,10 @@ int main()
     if (ListErase       (&list, 4))
         break;
 
-    if (ListPushFront   (&list, 666,   &insert_pos))
+    if (ListInsertAfter (&list, 0, 666, &insert_pos))
         break;
 
-    if (ListPushBack    (&list, 6471,  &insert_pos))
+    if (ListInsertBefore(&list, 0, 6471, &insert_pos))
         break;
 
     if (ListInsertBefore(&list, 0, 22, &insert_pos))
