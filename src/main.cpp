@@ -1,4 +1,6 @@
-#include "list.h"
+#include "common.h"
+#include "listCommands.h"
+#include "listDebug.h"
 
 //------------------------------------------------------------------------------------------
 
@@ -10,40 +12,43 @@ int main()
 
     BEGIN
 
-    MAIN_CALL(ListCtor        (&list_ctx, 8));
+    if (ListCtor        (&list_ctx, 8))     break;
     LIST_CALL_DUMP(&list_ctx, "ctor",    "TEST_AFTER_CTOR");
 
-    MAIN_CALL(ListPushFront   (&list_ctx, 100));
+    if (ListPushFront   (&list_ctx, 100))   break;
     LIST_CALL_DUMP(&list_ctx, "front1",  "TEST_PUSH_FRONT_1");
 
-    MAIN_CALL(ListInsertAfter (&list_ctx, 1, 20));
+    // MAIN_CALL(ListPushFront   (&list_ctx, 100));
+    // LIST_CALL_DUMP(&list_ctx, "front1",  "TEST_PUSH_FRONT_1");
+
+    if (ListInsertAfter (&list_ctx, 1, 20)) break;
     LIST_CALL_DUMP(&list_ctx, "insert1", "TEST_INSERT_AFTER_1");
 
-    MAIN_CALL(ListInsertAfter (&list_ctx, 2, 30));
+    if (ListInsertAfter (&list_ctx, 2, 30)) break;
     LIST_CALL_DUMP(&list_ctx, "insert2", "TEST_INSERT_AFTER_2");
 
-    MAIN_CALL(ListInsertAfter (&list_ctx, 1, 25));
+    if (ListInsertAfter (&list_ctx, 1, 25)) break;
     LIST_CALL_DUMP(&list_ctx, "insert3", "TEST_INSERT_AFTER_3");
 
-    MAIN_CALL(ListErase       (&list_ctx, 2));
+    if (ListErase       (&list_ctx, 2))     break;
     LIST_CALL_DUMP(&list_ctx, "erase1", "TEST_ERASE_1");
 
-    MAIN_CALL(ListErase       (&list_ctx, 1));
+    if (ListErase       (&list_ctx, 1))     break;
     LIST_CALL_DUMP(&list_ctx, "erase2", "TEST_ERASE_2");
 
-    MAIN_CALL(ListErase       (&list_ctx, 3));
+    if (ListErase       (&list_ctx, 3))     break;
     LIST_CALL_DUMP(&list_ctx, "erase3", "TEST_ERASE_3");
 
-    MAIN_CALL(ListErase       (&list_ctx, 4));
+    if (ListErase       (&list_ctx, 4))     break;
     LIST_CALL_DUMP(&list_ctx, "erase4", "TEST_ERASE_4");
 
-    MAIN_CALL(ListPushFront   (&list_ctx, 666));
+    if (ListPushFront   (&list_ctx, 666))   break;
     LIST_CALL_DUMP(&list_ctx, "front2",  "TEST_PUSH_FRONT_2");
 
-    MAIN_CALL(ListPushBack    (&list_ctx, 6471));
+    if (ListPushBack    (&list_ctx, 6471))  break;
     LIST_CALL_DUMP(&list_ctx, "back1",   "TEST_PUSH_BACK_1");
 
-    MAIN_CALL(ListInsertBefore(&list_ctx, 4, 22));
+    if (ListInsertBefore(&list_ctx, 4, 22)) break;
     LIST_CALL_DUMP(&list_ctx, "insert4", "TEST_INSERT_BEFORE_4");
 
     END;

@@ -1,10 +1,10 @@
-#ifndef LIST_H
-#define LIST_H
+#ifndef LIST_DEBUG_H
+#define LIST_DEBUG_H
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
 #include "common.h"
-#include <stdint.h>
+#include "listTypes.h"
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
@@ -52,32 +52,6 @@
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
-typedef int elem_t;
-
-#define SPEC "%d"
-
-const elem_t LIST_POISON = 0xAB0BA;
-
-//——————————————————————————————————————————————————————————————————————————————————————————
-
-typedef struct NodeCtx
-{
-    elem_t node;
-    int    next;
-    int    prev;
-} NodeCtx_t;
-
-//——————————————————————————————————————————————————————————————————————————————————————————
-
-typedef struct ListCtx
-{
-    NodeCtx_t*  data;
-    size_t      capacity;
-    int         free;
-} ListCtx_t;
-
-//——————————————————————————————————————————————————————————————————————————————————————————
-
 typedef enum ListErr
 {
     LIST_SUCCESS,
@@ -85,7 +59,8 @@ typedef enum ListErr
     LIST_CALLOC_ERROR,
     LIST_DATA_REALLOC_ERROR,
     LIST_LOGFILE_OPEN_ERROR,
-    LIST_GRAPH_ERROR,
+    LIST_FILENAME_TOOBIG,
+    LIST_IMAGE_NAME_NULL,
     LIST_CTX_NULL,
     LIST_DATA_NULL,
     LIST_CAPACITY_EXCEEDS_MAX,
@@ -105,14 +80,18 @@ typedef enum ListErr
     LIST_POSITION_NEGATIVE,
     LIST_POSITION_TOO_BIG,
     LIST_NO_SUCH_ELEMENT,
-    LIST_IS_EMPTY
+    LIST_IS_EMPTY,
+    LIST_MAIN_IS_CYCLED,
+    LIST_FREE_IS_CYCLED,
+    LIST_FREE_VALUE_NOT_PZN,
+    LIST_FILLED_VALUE_IS_PZN
 } ListErr_t;
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
 #ifdef LIST_DEBUG
 
-//==========================================================================================
+//——————————————————————————————————————————————————————————————————————————————————————————
 
 const char* const LIST_STR_ERRORS[] =
 {
@@ -121,7 +100,8 @@ const char* const LIST_STR_ERRORS[] =
     [LIST_CALLOC_ERROR]         = "LIST_CALLOC_ERROR",
     [LIST_DATA_REALLOC_ERROR]   = "LIST_DATA_REALLOC_ERROR",
     [LIST_LOGFILE_OPEN_ERROR]   = "LIST_LOGFILE_OPEN_ERROR",
-    [LIST_GRAPH_ERROR]          = "LIST_GRAPH_ERROR",
+    [LIST_FILENAME_TOOBIG]      = "LIST_FILENAME_TOOBIG",
+    [LIST_IMAGE_NAME_NULL]      = "LIST_IMAGE_NAME_NULL",
     [LIST_CTX_NULL]             = "LIST_CTX_NULL",
     [LIST_DATA_NULL]            = "LIST_DATA_NULL",
     [LIST_CAPACITY_EXCEEDS_MAX] = "LIST_CAPACITY_EXCEEDS_MAX",
@@ -141,7 +121,11 @@ const char* const LIST_STR_ERRORS[] =
     [LIST_POSITION_NEGATIVE]    = "LIST_POSITION_NEGATIVE",
     [LIST_POSITION_TOO_BIG]     = "LIST_POSITION_TOO_BIG",
     [LIST_NO_SUCH_ELEMENT]      = "LIST_NO_SUCH_ELEMENT",
-    [LIST_IS_EMPTY]             = "LIST_IS_EMPTY"
+    [LIST_IS_EMPTY]             = "LIST_IS_EMPTY",
+    [LIST_MAIN_IS_CYCLED]       = "LIST_MAIN_IS_CYCLED",
+    [LIST_FREE_IS_CYCLED]       = "LIST_FREE_IS_CYCLED",
+    [LIST_FREE_VALUE_NOT_PZN]   = "LIST_FREE_VALUE_NOT_PZN",
+    [LIST_FILLED_VALUE_IS_PZN]  = "LIST_FILLED_VALUE_IS_PZN"
 };
 
 //——————————————————————————————————————————————————————————————————————————————————————————
@@ -156,32 +140,18 @@ typedef struct ListDumpInfo
     int         line;
 } ListDumpInfo_t;
 
-//==========================================================================================
-
-#endif /* LIST_DEBUG */
-
 //——————————————————————————————————————————————————————————————————————————————————————————
 
-const size_t LIST_MIN_CAPACITY = 4;
-const size_t LIST_MAX_CAPACITY = 1024 * 1024 * 1024;
+int LinearSearch(int* array, size_t size, int elem);
 
-//——————————————————————————————————————————————————————————————————————————————————————————
-
-ListErr_t ListCtor            (ListCtx_t* list_ctx, size_t capacity);
-ListErr_t ListDtor            (ListCtx_t* list_ctx);
-ListErr_t ListErase           (ListCtx_t* list_ctx, int pos);
-ListErr_t ListCheckPos        (ListCtx_t* list_ctx, int pos);
-ListErr_t ListInsertAfter     (ListCtx_t* list_ctx, int pos, elem_t value);
-ListErr_t ListInsertBefore    (ListCtx_t* list_ctx, int pos, elem_t value);
-ListErr_t ListPushFront       (ListCtx_t* list_ctx,          elem_t value);
-ListErr_t ListPushBack        (ListCtx_t* list_ctx,          elem_t value);
-
-#ifdef LIST_DEBUG
 ListErr_t ListVerify          (ListCtx_t* list_ctx);
 ListErr_t ListDump            (ListCtx_t* list_ctx, ListDumpInfo_t* dump_info);
 ListErr_t ListCreateDumpGraph (ListCtx_t* list_ctx, const char* image_name);
+
+//——————————————————————————————————————————————————————————————————————————————————————————
+
 #endif /* LIST_DEBUG */
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
-#endif /* LIST_H */
+#endif /* LIST_DEBUG_H */

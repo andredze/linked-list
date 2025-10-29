@@ -22,8 +22,9 @@ ifdef DEBUG
 CXXFLAGS += -D LIST_DEBUG
 endif
 
-SOURCES = src/main.cpp \
-		  src/list.cpp
+SOURCES = src/main.cpp 		   \
+		  src/listCommands.cpp \
+		  src/listDebug.cpp
 
 EXECUTABLE = run.exe
 
