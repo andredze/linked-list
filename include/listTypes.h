@@ -16,21 +16,21 @@ const elem_t LIST_POISON = 0xAB0BA;
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
-typedef struct NodeCtx
+typedef struct Node
 {
-    elem_t node;
+    elem_t value;
     int    next;
     int    prev;
-} NodeCtx_t;
+} Node_t;
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
-typedef struct ListCtx
+typedef struct List
 {
-    NodeCtx_t*  data;
-    size_t      capacity;
-    int         free;
-} ListCtx_t;
+    Node_t*  data;
+    size_t   capacity;
+    int      free;
+} List_t;
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 

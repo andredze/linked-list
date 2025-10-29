@@ -2,15 +2,15 @@
 
 //------------------------------------------------------------------------------------------
 
-static ListErr_t ListRealloc(ListCtx_t* list_ctx);
+static ListErr_t ListRealloc(List_t* list);
 
 //------------------------------------------------------------------------------------------
 
-ListErr_t ListCtor(ListCtx_t* list_ctx, size_t capacity)
+ListErr_t ListCtor(List_t* list, size_t capacity)
 {
     DPRINTF("> Start ListCtor(capacity = %zu)\n", capacity);
 
-    if (list_ctx == NULL)
+    if (list == NULL)
     {
         PRINTERR("LIST_CTX_NULL");
         return LIST_CTX_NULL;
@@ -26,34 +26,34 @@ ListErr_t ListCtor(ListCtx_t* list_ctx, size_t capacity)
         capacity = LIST_MIN_CAPACITY;
     }
 
-    list_ctx->data = (NodeCtx_t*) calloc(capacity, sizeof(NodeCtx_t));
+    list->data = (Node_t*) calloc(capacity, sizeof(Node_t));
 
-    if (list_ctx->data == NULL)
+    if (list->data == NULL)
     {
         PRINTERR("LIST_CALLOC_ERROR");
         return LIST_CALLOC_ERROR;
     }
 
-    list_ctx->capacity = capacity;
-    list_ctx->free     =  1;
+    list->capacity = capacity;
+    list->free     =  1;
 
     /* Filling the null element */
-    list_ctx->data[0].prev = 0; /* tail */
-    list_ctx->data[0].next = 0; /* head */
-    list_ctx->data[0].node = LIST_POISON;
+    list->data[0].prev = 0; /* tail */
+    list->data[0].next = 0; /* head */
+    list->data[0].value = LIST_POISON;
 
     /* Filling the free list */
     for (int i = 1; i < (int) capacity - 1; i++)
     {
-        list_ctx->data[i].prev = -1;
-        list_ctx->data[i].node = LIST_POISON; // TODO: не заполнять вообще? или только в дебажной версии?
-        list_ctx->data[i].next = i + 1;
+        list->data[i].prev = -1;
+        list->data[i].value = LIST_POISON; // TODO: не заполнять вообще? или только в дебажной версии?
+        list->data[i].next = i + 1;
     }
 
     /* Last free element addresses to null */
-    list_ctx->data[capacity - 1].prev = -1;
-    list_ctx->data[capacity - 1].node = LIST_POISON;
-    list_ctx->data[capacity - 1].next = 0;
+    list->data[capacity - 1].prev = -1;
+    list->data[capacity - 1].value = LIST_POISON;
+    list->data[capacity - 1].next = 0;
 
     DPRINTF("> End   ListCtor\n\n");
 
@@ -62,16 +62,16 @@ ListErr_t ListCtor(ListCtx_t* list_ctx, size_t capacity)
 
 //------------------------------------------------------------------------------------------
 
-ListErr_t ListCheckPos(ListCtx_t* list_ctx, int pos)
+ListErr_t ListCheckPos(List_t* list, int pos)
 {
-    assert(list_ctx != NULL);
+    assert(list != NULL);
 
     if (pos < 0)
     {
         PRINTERR("List position is negative");
         return LIST_POSITION_NEGATIVE;
     }
-    if ((size_t) pos >= list_ctx->capacity)
+    if ((size_t) pos >= list->capacity)
     {
         PRINTERR("List position is too big");
         return LIST_POSITION_TOO_BIG;
@@ -82,50 +82,57 @@ ListErr_t ListCheckPos(ListCtx_t* list_ctx, int pos)
 
 //------------------------------------------------------------------------------------------
 
-ListErr_t ListInsertAfter(ListCtx_t* list_ctx, int pos, elem_t value)
+ListErr_t ListInsertAfter(List_t* list, int pos, elem_t value)
 {
     DPRINTF("> Start ListInsertAfter(pos = %d, value = " SPEC ")\n", pos, value);
 
-    DEBUG_LIST_CHECK(list_ctx, "INSERT_AFTER_START");
+    DEBUG_LIST_CHECK(list, "INSERT_AFTER_START");
 
-    if (list_ctx->data[0].next == 0 || list_ctx->data[0].prev == 0)
+    if (list->data[0].next == 0 || list->data[0].prev == 0)
     {
         PRINTERR("Given list to insert is empty");
         return LIST_IS_EMPTY;
     }
 
-    SAFE_CALL(ListCheckPos(list_ctx, pos));
+    ListErr_t error = LIST_SUCCESS;
+    if ((error = ListCheckPos(list, pos)) != LIST_SUCCESS)
+    {
+        return error;
+    }
 
     /* Check that pos is in list */
-    if (list_ctx->data[pos].prev == -1)
+    if (list->data[pos].prev == -1)
     {
         PRINTERR("List doesn't have an element with pos = %d", pos);
         return LIST_NO_SUCH_ELEMENT;
     }
 
-    if (list_ctx->free == 0)
+    if (list->free == 0)
     {
-        SAFE_CALL(ListRealloc(list_ctx));
+        if ((error = ListRealloc(list)) != LIST_SUCCESS)
+        {
+            return error;
+        }
     }
 
-    int cur_index  = list_ctx->free;
-    int pos_next   = list_ctx->data[pos].next;
+    int cur_index  = list->free;
+    int pos_next   = list->data[pos].next;
 
     /* set new free element */
-    list_ctx->free = list_ctx->data[list_ctx->free].next;
+    list->free = list->data[list->free].next;
 
     /* connect previous element to current */
-    list_ctx->data[pos].next       = cur_index;
+    list->data[pos].next       = cur_index;
 
     /* connect current element to previous and next */
-    list_ctx->data[cur_index].prev = pos;
-    list_ctx->data[cur_index].node = value;
-    list_ctx->data[cur_index].next = pos_next;
+    list->data[cur_index].prev = pos;
+    list->data[cur_index].value = value;
+    list->data[cur_index].next = pos_next;
 
     /* connect next element to current */
-    list_ctx->data[pos_next].prev  = cur_index;
+    list->data[pos_next].prev  = cur_index;
 
-    DEBUG_LIST_CHECK(list_ctx, "INSERT_AFTER_END");
+    DEBUG_LIST_CHECK(list, "INSERT_AFTER_END");
 
     DPRINTF("> End   ListInsertAfter\n\n");
 
@@ -134,50 +141,57 @@ ListErr_t ListInsertAfter(ListCtx_t* list_ctx, int pos, elem_t value)
 
 //------------------------------------------------------------------------------------------
 
-ListErr_t ListInsertBefore(ListCtx_t* list_ctx, int pos, elem_t value)
+ListErr_t ListInsertBefore(List_t* list, int pos, elem_t value)
 {
     DPRINTF("> Start ListInsertBefore(pos = %d, value = " SPEC ")\n", pos, value);
 
-    DEBUG_LIST_CHECK(list_ctx, "INSERT_BEFORE_START");
+    DEBUG_LIST_CHECK(list, "INSERT_BEFORE_START");
 
-    if (list_ctx->data[0].next == 0 || list_ctx->data[0].prev == 0)
+    if (list->data[0].next == 0 || list->data[0].prev == 0)
     {
         PRINTERR("Given list to insert is empty");
         return LIST_IS_EMPTY;
     }
 
-    SAFE_CALL(ListCheckPos(list_ctx, pos));
+    ListErr_t error = LIST_SUCCESS;
+    if ((error = ListCheckPos(list, pos)) != LIST_SUCCESS)
+    {
+        return error;
+    }
 
     /* Check that pos is in list */
-    if (list_ctx->data[pos].prev == -1)
+    if (list->data[pos].prev == -1)
     {
         PRINTERR("List doesn't have an element with pos = %d", pos);
         return LIST_NO_SUCH_ELEMENT;
     }
 
-    if (list_ctx->free == 0)
+    if (list->free == 0)
     {
-        SAFE_CALL(ListRealloc(list_ctx));
+        if ((error = ListRealloc(list)) != LIST_SUCCESS)
+        {
+            return error;
+        }
     }
 
-    int cur_index  = list_ctx->free;
-    int pos_prev   = list_ctx->data[pos].prev;
+    int cur_index  = list->free;
+    int pos_prev   = list->data[pos].prev;
 
     /* set new free element */
-    list_ctx->free = list_ctx->data[list_ctx->free].next;
+    list->free = list->data[list->free].next;
 
     /* connect previous element to current */
-    list_ctx->data[pos_prev].next  = cur_index;
+    list->data[pos_prev].next  = cur_index;
 
     /* connect current element to previous and next */
-    list_ctx->data[cur_index].prev = pos_prev;
-    list_ctx->data[cur_index].node = value;
-    list_ctx->data[cur_index].next = pos;
+    list->data[cur_index].prev = pos_prev;
+    list->data[cur_index].value = value;
+    list->data[cur_index].next = pos;
 
     /* connect next element to current */
-    list_ctx->data[pos].prev       = cur_index;
+    list->data[pos].prev       = cur_index;
 
-    DEBUG_LIST_CHECK(list_ctx, "INSERT_BEFORE_END");
+    DEBUG_LIST_CHECK(list, "INSERT_BEFORE_END");
 
     DPRINTF("> End   ListInsertBefore\n\n");
 
@@ -186,35 +200,39 @@ ListErr_t ListInsertBefore(ListCtx_t* list_ctx, int pos, elem_t value)
 
 //------------------------------------------------------------------------------------------
 
-ListErr_t ListPushFront(ListCtx_t* list_ctx, elem_t value)
+ListErr_t ListPushFront(List_t* list, elem_t value)
 {
     DPRINTF("> Start ListPushFront(value = " SPEC ")\n", value);
 
-    DEBUG_LIST_CHECK(list_ctx, "PUSH_FRONT_START");
+    DEBUG_LIST_CHECK(list, "PUSH_FRONT_START");
 
-    if (list_ctx->free == 0)
+    ListErr_t error = LIST_SUCCESS;
+    if (list->free == 0)
     {
-        SAFE_CALL(ListRealloc(list_ctx));
+        if ((error = ListRealloc(list)) != LIST_SUCCESS)
+        {
+            return error;
+        }
     }
 
-    int cur_index  = list_ctx->free;
-    int head       = list_ctx->data[0].next;
+    int cur_index  = list->free;
+    int head       = list->data[0].next;
 
     /* set new free element */
-    list_ctx->free = list_ctx->data[list_ctx->free].next;
+    list->free = list->data[list->free].next;
 
     /* set new head */
-    list_ctx->data[0].next = cur_index;
+    list->data[0].next = cur_index;
 
     /* connect new element to null element and prev head */
-    list_ctx->data[cur_index].prev = 0;
-    list_ctx->data[cur_index].node = value;
-    list_ctx->data[cur_index].next = head;
+    list->data[cur_index].prev = 0;
+    list->data[cur_index].value = value;
+    list->data[cur_index].next = head;
 
     /* connect prev head to new element */
-    list_ctx->data[head].prev = cur_index;
+    list->data[head].prev = cur_index;
 
-    DEBUG_LIST_CHECK(list_ctx, "PUSH_FRONT_END");
+    DEBUG_LIST_CHECK(list, "PUSH_FRONT_END");
 
     DPRINTF("> End   ListPushFront\n\n");
 
@@ -223,35 +241,39 @@ ListErr_t ListPushFront(ListCtx_t* list_ctx, elem_t value)
 
 //------------------------------------------------------------------------------------------
 
-ListErr_t ListPushBack(ListCtx_t* list_ctx, elem_t value)
+ListErr_t ListPushBack(List_t* list, elem_t value)
 {
     DPRINTF("> Start ListPushBack(value = " SPEC ")\n", value);
 
-    DEBUG_LIST_CHECK(list_ctx, "PUSH_BACK_START");
+    DEBUG_LIST_CHECK(list, "PUSH_BACK_START");
 
-    if (list_ctx->free == 0)
+    ListErr_t error = LIST_SUCCESS;
+    if (list->free == 0)
     {
-        SAFE_CALL(ListRealloc(list_ctx));
+        if ((error = ListRealloc(list)) != LIST_SUCCESS)
+        {
+            return error;
+        }
     }
 
-    int cur_index  = list_ctx->free;
-    int tail       = list_ctx->data[0].prev;
+    int cur_index  = list->free;
+    int tail       = list->data[0].prev;
 
     /* set new free element */
-    list_ctx->free = list_ctx->data[list_ctx->free].next;
+    list->free = list->data[list->free].next;
 
     /* set new tail */
-    list_ctx->data[0].prev = cur_index;
+    list->data[0].prev = cur_index;
 
     /* connect new element to null element and prev tail */
-    list_ctx->data[cur_index].prev = tail;
-    list_ctx->data[cur_index].node = value;
-    list_ctx->data[cur_index].next = 0;
+    list->data[cur_index].prev = tail;
+    list->data[cur_index].value = value;
+    list->data[cur_index].next = 0;
 
     /* connect prev tail to new element */
-    list_ctx->data[tail].next = cur_index;
+    list->data[tail].next = cur_index;
 
-    DEBUG_LIST_CHECK(list_ctx, "PUSH_BACK_END");
+    DEBUG_LIST_CHECK(list, "PUSH_BACK_END");
 
     DPRINTF("> End   ListPushBack\n\n");
 
@@ -260,15 +282,15 @@ ListErr_t ListPushBack(ListCtx_t* list_ctx, elem_t value)
 
 //------------------------------------------------------------------------------------------
 
-static ListErr_t ListRealloc(ListCtx_t* list_ctx)
+static ListErr_t ListRealloc(List_t* list)
 {
     DPRINTF("\t> Start ListRealloc()\n");
 
-    DEBUG_LIST_CHECK(list_ctx, "REALLOC_START");
+    DEBUG_LIST_CHECK(list, "REALLOC_START");
 
-    size_t new_size = sizeof(list_ctx->data[0]) * (list_ctx->capacity * 2 + 1);
+    size_t new_size = sizeof(list->data[0]) * (list->capacity * 2 + 1);
 
-    NodeCtx_t* new_data = (NodeCtx_t*) realloc(list_ctx->data, new_size);
+    Node_t* new_data = (Node_t*) realloc(list->data, new_size);
 
     if (new_data == NULL)
     {
@@ -276,26 +298,26 @@ static ListErr_t ListRealloc(ListCtx_t* list_ctx)
         return LIST_DATA_REALLOC_ERROR;
     }
 
-    size_t old_capacity = list_ctx->capacity;
-    list_ctx->capacity  = list_ctx->capacity * 2 + 1;
-    list_ctx->data      = new_data;
+    size_t old_capacity = list->capacity;
+    list->capacity  = list->capacity * 2 + 1;
+    list->data      = new_data;
 
-    list_ctx->free = (int) old_capacity;
+    list->free = (int) old_capacity;
 
     /* Filling the free list */
-    for (int i = (int) old_capacity; i < (int) list_ctx->capacity - 1; i++)
+    for (int i = (int) old_capacity; i < (int) list->capacity - 1; i++)
     {
-        list_ctx->data[i].prev = -1;
-        list_ctx->data[i].node = LIST_POISON;
-        list_ctx->data[i].next = i + 1;
+        list->data[i].prev = -1;
+        list->data[i].value = LIST_POISON;
+        list->data[i].next = i + 1;
     }
 
     /* Last free element addresses to null */
-    list_ctx->data[list_ctx->capacity - 1].prev = -1;
-    list_ctx->data[list_ctx->capacity - 1].node = LIST_POISON;
-    list_ctx->data[list_ctx->capacity - 1].next = 0;
+    list->data[list->capacity - 1].prev = -1;
+    list->data[list->capacity - 1].value = LIST_POISON;
+    list->data[list->capacity - 1].next = 0;
 
-    DEBUG_LIST_CHECK(list_ctx, "REALLOC_END");
+    DEBUG_LIST_CHECK(list, "REALLOC_END");
 
     DPRINTF("\t> End   ListRealloc\n");
 
@@ -304,39 +326,43 @@ static ListErr_t ListRealloc(ListCtx_t* list_ctx)
 
 //------------------------------------------------------------------------------------------
 
-ListErr_t ListErase(ListCtx_t* list_ctx, int pos)
+ListErr_t ListErase(List_t* list, int pos)
 {
     DPRINTF("> Start ListErase(pos = %d)\n", pos);
 
-    DEBUG_LIST_CHECK(list_ctx, "ERASE_START");
+    DEBUG_LIST_CHECK(list, "ERASE_START");
 
-    SAFE_CALL(ListCheckPos(list_ctx, pos));
+    ListErr_t error = LIST_SUCCESS;
+    if ((error = ListCheckPos(list, pos)) != LIST_SUCCESS)
+    {
+        return error;
+    }
 
-    int next_ind = list_ctx->data[pos].next;
-    int prev_ind = list_ctx->data[pos].prev;
+    int next_ind = list->data[pos].next;
+    int prev_ind = list->data[pos].prev;
 
     /* Connect pos to free and set poisons */
-    list_ctx->data[pos].prev = -1;
-    list_ctx->data[pos].node = LIST_POISON;
-    list_ctx->data[pos].next = list_ctx->free;
+    list->data[pos].prev = -1;
+    list->data[pos].value = LIST_POISON;
+    list->data[pos].next = list->free;
 
-    list_ctx->free = pos;
+    list->free = pos;
 
-    DPRINTF("\thead = %d;\n"
-            "\ttail = %d;\n"
-            "\tpos = %d;\n"
-            "\tprev_ind = %d;\n"
-            "\tnext_ind = %d;\n",
-            list_ctx->data[0].next,
-            list_ctx->data[0].prev,
-            pos,
+    DPRINTF("\tprev_ind = %d;\n"
+            "\tnext_ind = %d;\n"
+            "\thead     = %d;\n"
+            "\ttail     = %d;\n"
+            "\tpos      = %d;\n",
             prev_ind,
-            next_ind);
+            next_ind,
+            list->data[0].next,
+            list->data[0].prev,
+            pos);
 
-    list_ctx->data[prev_ind].next = next_ind;
-    list_ctx->data[next_ind].prev = prev_ind;
+    list->data[prev_ind].next = next_ind;
+    list->data[next_ind].prev = prev_ind;
 
-    DEBUG_LIST_CHECK(list_ctx, "ERASE_END");
+    DEBUG_LIST_CHECK(list, "ERASE_END");
 
     DPRINTF("> End   ListErase\n\n");
 
@@ -345,17 +371,17 @@ ListErr_t ListErase(ListCtx_t* list_ctx, int pos)
 
 //------------------------------------------------------------------------------------------
 
-ListErr_t ListDtor(ListCtx_t* list_ctx)
+ListErr_t ListDtor(List_t* list)
 {
     DPRINTF("> Start ListDtor()\n");
 
-    if (list_ctx == NULL)
+    if (list == NULL)
     {
         PRINTERR("LIST_CTX_NULL");
         return LIST_CTX_NULL;
     }
 
-    free(list_ctx->data);
+    free(list->data);
 
     DPRINTF("> End   ListDtor\n\n");
 

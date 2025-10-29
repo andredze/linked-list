@@ -12,30 +12,31 @@
 
 //==========================================================================================
 
-#define LIST_CALL_DUMP(list_ctx_ptr, name, message)                                         \
-        BEGIN                                                                               \
-        ListDumpInfo_t dump_info = {LIST_SUCCESS, name, message, __PRETTY_FUNCTION__,       \
-                                    __FILE__, __LINE__};                                    \
-        if (ListDump(list_ctx_ptr, &dump_info))                                             \
-        {                                                                                   \
-            ListDtor(list_ctx_ptr);                                                         \
-            return EXIT_FAILURE;                                                            \
-        }                                                                                   \
+#define LIST_CALL_DUMP(list_ptr, name, message)                                         \
+        BEGIN                                                                           \
+        ListDumpInfo_t dump_info = {LIST_SUCCESS, name, message, __PRETTY_FUNCTION__,   \
+                                    __FILE__, __LINE__};                                \
+        if (ListDump(list_ptr, &dump_info))                                             \
+        {                                                                               \
+            ListDtor(list_ptr);                                                         \
+            return EXIT_FAILURE;                                                        \
+        }                                                                               \
         END
 
-#define DEBUG_LIST_CHECK(list_ctx, reason)                                              \
+#define DEBUG_LIST_CHECK(list, reason)                                                  \
         BEGIN                                                                           \
-        ListErr_t error = LIST_SUCCESS;                                                 \
-        if ((error = ListVerify(list_ctx)))                                             \
+        ListErr_t verify_status = LIST_SUCCESS;                                         \
+        if ((verify_status = ListVerify(list)))                                         \
         {                                                                               \
-            PRINTERR("ListVerify not passed! Check \"list_log.htm\"");                  \
-            ListDumpInfo_t dump_info = {error, "err_dump", reason,                      \
+            PRINTERR("%s (ListVerify not passed! Check \"list_log.htm\")",              \
+                     LIST_STR_ERRORS[verify_status]);                                   \
+            ListDumpInfo_t dump_info = {verify_status, "err_dump", reason,              \
                                         __PRETTY_FUNCTION__, __FILE__, __LINE__};       \
-            if (ListDump(list_ctx, &dump_info))                                         \
+            if (ListDump(list, &dump_info))                                             \
             {                                                                           \
                 return LIST_DUMP_ERROR;                                                 \
             }                                                                           \
-            return error;                                                               \
+            return verify_status;                                                       \
         }                                                                               \
         END
 
@@ -43,8 +44,8 @@
 
 #else
 
-#define LIST_CALL_DUMP(list_ctx_ptr, name, message)    ;
-#define DEBUG_LIST_CHECK(list_ctx, reason)             ;
+#define LIST_CALL_DUMP(list_ptr, name, message)    ;
+#define DEBUG_LIST_CHECK(list, reason)             ;
 
 //==========================================================================================
 
@@ -144,9 +145,9 @@ typedef struct ListDumpInfo
 
 int LinearSearch(int* array, size_t size, int elem);
 
-ListErr_t ListVerify          (ListCtx_t* list_ctx);
-ListErr_t ListDump            (ListCtx_t* list_ctx, ListDumpInfo_t* dump_info);
-ListErr_t ListCreateDumpGraph (ListCtx_t* list_ctx, const char* image_name);
+ListErr_t ListVerify          (List_t* list);
+ListErr_t ListDump            (List_t* list, ListDumpInfo_t* dump_info);
+ListErr_t ListCreateDumpGraph (List_t* list, const char* image_name);
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 

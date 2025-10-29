@@ -4,72 +4,78 @@
 
 //==========================================================================================
 
-ListErr_t ListVerify(ListCtx_t* list_ctx)
+ListErr_t ListVerify(List_t* list)
 {
-    if (list_ctx == NULL)
+    if (list == NULL)
     {
         return LIST_CTX_NULL;
     }
-    if (list_ctx->capacity > LIST_MAX_CAPACITY)
+    if (list->capacity > LIST_MAX_CAPACITY)
     {
         return LIST_CAPACITY_EXCEEDS_MAX;
     }
-    if (list_ctx->data == NULL)
+    if (list->data == NULL)
     {
         return LIST_DATA_NULL;
     }
-    if (list_ctx->data[0].next < 0)
+    if (list->data[0].next < 0)
     {
         return LIST_HEAD_NEGATIVE;
     }
-    if ((size_t) list_ctx->data[0].next >= list_ctx->capacity)
+    if ((size_t) list->data[0].next >= list->capacity)
     {
         return LIST_HEAD_TOOBIG;
     }
-    if (list_ctx->data[0].prev < 0)
+    if (list->data[0].prev < 0)
     {
         return LIST_TAIL_NEGATIVE;
     }
-    if ((size_t) list_ctx->data[0].prev >= list_ctx->capacity)
+    if ((size_t) list->data[0].prev >= list->capacity)
     {
         return LIST_TAIL_TOOBIG;
     }
-    if (list_ctx->free < 0)
+    if (list->free < 0)
     {
         return LIST_FREE_NEGATIVE;
     }
-    if ((size_t) list_ctx->free >= list_ctx->capacity)
+    if ((size_t) list->free >= list->capacity)
     {
         return LIST_FREE_TOOBIG;
     }
 
-    int* nodes = (int*) calloc(list_ctx->capacity, sizeof(list_ctx->data[0].next));
+    int* nodes = (int*) calloc(list->capacity, sizeof(list->data[0].next));
     int  count = 0;
 
-    for (int i = list_ctx->data[0].next; i != 0; i = list_ctx->data[i].next)
+    for (int i = list->data[0].next; i != 0; i = list->data[i].next)
     {
-        if (list_ctx->data[i].node == LIST_POISON)
+        if (list->data[i].value == LIST_POISON)
         {
+            free(nodes);
             return LIST_FILLED_VALUE_IS_PZN;
         }
-        if (LinearSearch(nodes, list_ctx->capacity, i) != -1)
+        if (LinearSearch(nodes, list->capacity, i) != -1)
         {
+            free(nodes);
             return LIST_MAIN_IS_CYCLED;
         }
-        if (list_ctx->data[i].next < 0)
+        if (list->data[i].next < 0)
         {
+            free(nodes);
             return LIST_NEXT_NEGATIVE;
         }
-        if ((size_t) list_ctx->data[i].next >= list_ctx->capacity)
+        if ((size_t) list->data[i].next >= list->capacity)
         {
+            free(nodes);
             return LIST_NEXT_TOOBIG;
         }
-        if (list_ctx->data[i].prev < 0)
+        if (list->data[i].prev < 0)
         {
+            free(nodes);
             return LIST_PREV_NEGATIVE;
         }
-        if ((size_t) list_ctx->data[i].prev >= list_ctx->capacity)
+        if ((size_t) list->data[i].prev >= list->capacity)
         {
+            free(nodes);
             return LIST_PREV_TOOBIG;
         }
 
@@ -78,29 +84,34 @@ ListErr_t ListVerify(ListCtx_t* list_ctx)
 
     free(nodes);
 
-    int* free_nodes = (int*) calloc(list_ctx->capacity, sizeof(list_ctx->data[0].next));
+    int* free_nodes = (int*) calloc(list->capacity, sizeof(list->data[0].next));
     int  free_count = 0;
 
-    for (int i = list_ctx->free; i != 0; i = list_ctx->data[i].next)
+    for (int i = list->free; i != 0; i = list->data[i].next)
     {
-        if (list_ctx->data[i].node != LIST_POISON)
+        if (list->data[i].value != LIST_POISON)
         {
+            free(free_nodes);
             return LIST_FREE_VALUE_NOT_PZN;
         }
-        if (LinearSearch(free_nodes, list_ctx->capacity, i) != -1)
+        if (LinearSearch(free_nodes, list->capacity, i) != -1)
         {
+            free(free_nodes);
             return LIST_FREE_IS_CYCLED;
         }
-        if (list_ctx->data[i].next < 0)
+        if (list->data[i].next < 0)
         {
+            free(free_nodes);
             return LIST_FREE_NEXT_NEGATIVE;
         }
-        if ((size_t) list_ctx->data[i].next >= list_ctx->capacity)
+        if ((size_t) list->data[i].next >= list->capacity)
         {
+            free(free_nodes);
             return LIST_FREE_NEXT_TOOBIG;
         }
-        if (list_ctx->data[i].prev != -1)
+        if (list->data[i].prev != -1)
         {
+            free(free_nodes);
             return LIST_FREE_PREV_NOT_NULL;
         }
 
@@ -131,7 +142,7 @@ int LinearSearch(int* array, size_t size, int elem)
 
 //------------------------------------------------------------------------------------------
 
-ListErr_t ListDump(ListCtx_t* list_ctx, ListDumpInfo_t* dump_info)
+ListErr_t ListDump(List_t* list, ListDumpInfo_t* dump_info)
 {
 
 // TODO: test dump with all errors
@@ -173,7 +184,7 @@ ListErr_t ListDump(ListCtx_t* list_ctx, ListDumpInfo_t* dump_info)
     fprintf(log_stream, "LIST DUMP called from %s at %s:%d\n\n",
             dump_info->func, dump_info->file, dump_info->line);
 
-    fprintf(log_stream, "list_ctx [%p]:\n\n", list_ctx);
+    fprintf(log_stream, "list [%p]:\n\n", list);
 
     if (dump_info->error == LIST_CTX_NULL)
     {
@@ -185,9 +196,9 @@ ListErr_t ListDump(ListCtx_t* list_ctx, ListDumpInfo_t* dump_info)
             "data     = %p;\n"
             "capacity = %zu;\n"
             "free     = %d;\n",
-            list_ctx->data,
-            list_ctx->capacity,
-            list_ctx->free);
+            list->data,
+            list->capacity,
+            list->free);
 
     if (dump_info->error == LIST_DATA_NULL)
     {
@@ -198,8 +209,8 @@ ListErr_t ListDump(ListCtx_t* list_ctx, ListDumpInfo_t* dump_info)
     fprintf(log_stream,
             "head     = %d;\n"
             "tail     = %d;\n",
-            list_ctx->data[0].next,
-            list_ctx->data[0].prev);
+            list->data[0].next,
+            list->data[0].prev);
 
     if (dump_info->error == LIST_HEAD_NEGATIVE ||
         dump_info->error == LIST_HEAD_TOOBIG)
@@ -209,7 +220,7 @@ ListErr_t ListDump(ListCtx_t* list_ctx, ListDumpInfo_t* dump_info)
     }
 
     ListErr_t graph_error = LIST_SUCCESS;
-    if ((graph_error = ListCreateDumpGraph(list_ctx, dump_info->image_name)))
+    if ((graph_error = ListCreateDumpGraph(list, dump_info->image_name)))
     {
         fclose(log_stream);
         return graph_error;
@@ -224,9 +235,9 @@ ListErr_t ListDump(ListCtx_t* list_ctx, ListDumpInfo_t* dump_info)
 
 //------------------------------------------------------------------------------------------
 
-ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
+ListErr_t ListCreateDumpGraph(List_t* list, const char* image_name)
 {
-    assert(list_ctx   != NULL);
+    assert(list   != NULL);
 
     if (image_name == NULL)
     {
@@ -266,13 +277,13 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
             "fontcolor = \"#3E3A22\"];\n"
             "\t");
 
-    for (size_t i = 0; i < list_ctx->capacity - 1; i++)
+    for (size_t i = 0; i < list->capacity - 1; i++)
     {
         fprintf(fp, "node%zu->", i);
     }
-    if (list_ctx->capacity >= 1)
+    if (list->capacity >= 1)
     {
-        fprintf(fp, "node%zu [style=\"invis\"];\n", list_ctx->capacity - 1);
+        fprintf(fp, "node%zu [style=\"invis\"];\n", list->capacity - 1);
     }
 
     /* add null node */
@@ -282,21 +293,21 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
             "fillcolor = \"#ecede8\", "
             "fontcolor = \"#3E3A22\", "
             "label=\"{ idx = 0 | value = ");
-    if (list_ctx->data[0].node)
+    if (list->data[0].value)
     {
         fprintf(fp, "PZN");
     }
     else
     {
-        fprintf(fp, SPEC, list_ctx->data[0].node);
+        fprintf(fp, SPEC, list->data[0].value);
     }
     fprintf(fp, " | { prev = %d | next = %d }}\"];\n",
-            list_ctx->data[0].prev,
-            list_ctx->data[0].next);
+            list->data[0].prev,
+            list->data[0].next);
 
     int skip_main_dump = 0;
 
-    if (!(list_ctx->data[0].next >= 0))
+    if (!(list->data[0].next >= 0))
     {
         skip_main_dump = 1;
     }
@@ -305,28 +316,28 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
     if (!(skip_main_dump))
     {
     /* make main list nodes */
-        for (int i = list_ctx->data[0].next; i != 0; i = list_ctx->data[i].next)
+        for (int i = list->data[0].next; i != 0; i = list->data[i].next)
         {
             fprintf(fp, "\tnode%d[label=\"{ idx = %d | value = ", i, i);
-            if (list_ctx->data[i].node == LIST_POISON)
+            if (list->data[i].value == LIST_POISON)
             {
                 fprintf(fp, "PZN");
             }
             else
             {
-                fprintf(fp, SPEC, list_ctx->data[i].node);
+                fprintf(fp, SPEC, list->data[i].value);
             }
             fprintf(fp, " | { prev = %d | next = %d }}\"];\n",
-                    list_ctx->data[i].prev,
-                    list_ctx->data[i].next);
+                    list->data[i].prev,
+                    list->data[i].next);
         }
         fprintf(fp, "\t");
 
     /* make main list next edges */
-        int i = list_ctx->data[0].next;
-        if (list_ctx->data[i].next != 0)
+        int i = list->data[0].next;
+        if (list->data[i].next != 0)
         {
-            for (; list_ctx->data[i].next != 0; i = list_ctx->data[i].next)
+            for (; list->data[i].next != 0; i = list->data[i].next)
             {
                 fprintf(fp, "node%d->", i);
             }
@@ -334,9 +345,9 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
         }
 
     /* make main list prev edges */
-        if (list_ctx->data[i].prev != 0)
+        if (list->data[i].prev != 0)
         {
-            for (; list_ctx->data[i].prev > 0; i = list_ctx->data[i].prev)
+            for (; list->data[i].prev > 0; i = list->data[i].prev)
             {
                 fprintf(fp, "node%d->", i);
             }
@@ -345,7 +356,7 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
     }
 
     /* make free list nodes */
-    for (int j = list_ctx->free; j != 0; j = list_ctx->data[j].next)
+    for (int j = list->free; j != 0; j = list->data[j].next)
     {
         fprintf(fp,
                 "\tnode%d"
@@ -354,25 +365,25 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
                 "fontcolor = \"#005300\", "
                 "label=\"{ idx = %d | value = ",
                 j, j);
-        if (list_ctx->data[j].node == LIST_POISON)
+        if (list->data[j].value == LIST_POISON)
         {
             fprintf(fp, "PZN");
         }
         else
         {
-            fprintf(fp, SPEC, list_ctx->data[j].node);
+            fprintf(fp, SPEC, list->data[j].value);
         }
         fprintf(fp, " | { prev = %d | next = %d }}\"];\n",
-                list_ctx->data[j].prev,
-                list_ctx->data[j].next);
+                list->data[j].prev,
+                list->data[j].next);
     }
     fprintf(fp, "\t");
 
     /* make free list edges */
-    int j = list_ctx->free;
-    if (j != 0 && list_ctx->data[j].next != 0)
+    int j = list->free;
+    if (j != 0 && list->data[j].next != 0)
     {
-        for (; list_ctx->data[j].next != 0; j = list_ctx->data[j].next)
+        for (; list->data[j].next != 0; j = list->data[j].next)
         {
             fprintf(fp, "node%d->", j);
         }
@@ -393,21 +404,21 @@ ListErr_t ListCreateDumpGraph(ListCtx_t* list_ctx, const char* image_name)
                 "arrowhead=none]");
 
     /* make head, tail and free edges to the elements */
-    if (list_ctx->data[0].prev >= 0)
+    if (list->data[0].prev >= 0)
     {
-        fprintf(fp, "\ttail->node%d;\n", list_ctx->data[0].prev);
+        fprintf(fp, "\ttail->node%d;\n", list->data[0].prev);
     }
-    if (list_ctx->data[0].next >= 0)
+    if (list->data[0].next >= 0)
     {
-        fprintf(fp, "\thead->node%d;\n", list_ctx->data[0].next);
+        fprintf(fp, "\thead->node%d;\n", list->data[0].next);
     }
     fprintf(fp, "\tfree->node%d;\n"
                 "\t{ rank=same; tail; head; free; }\n"
                 "\t{ rank=same; ",
-                list_ctx->free);
+                list->free);
 
     /* place all nodes in one rank */
-    for (size_t ind = 0; ind < list_ctx->capacity; ind++)
+    for (size_t ind = 0; ind < list->capacity; ind++)
     {
         fprintf(fp, "node%zu; ", ind);
     }

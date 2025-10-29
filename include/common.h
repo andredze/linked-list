@@ -17,25 +17,6 @@
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
-#define MAIN_CALL(func)         \
-        if (func)               \
-        {                       \
-            break;              \
-        }
-
-//——————————————————————————————————————————————————————————————————————————————————————————
-
-#define SAFE_CALL(call)                         \
-        BEGIN                                   \
-        ListErr_t error = LIST_SUCCESS;         \
-        if ((error = call) != LIST_SUCCESS)     \
-        {                                       \
-            return error;                       \
-        }                                       \
-        END
-
-//——————————————————————————————————————————————————————————————————————————————————————————
-
 #define PRINTERR(text, ...)                                                     \
         BEGIN                                                                   \
         fprintf(stderr, RED "In %s:%d from %s:\nERROR: " text "\n" RESET_CLR,   \
