@@ -38,22 +38,22 @@ ListErr_t ListCtor(List_t* list, size_t capacity)
     list->free     =  1;
 
     /* Filling the null element */
-    list->data[0].prev = 0; /* tail */
-    list->data[0].next = 0; /* head */
+    list->data[0].prev  = 0; /* tail */
+    list->data[0].next  = 0; /* head */
     list->data[0].value = LIST_POISON;
 
     /* Filling the free list */
     for (int i = 1; i < (int) capacity - 1; i++)
     {
-        list->data[i].prev = -1;
+        list->data[i].prev  = -1;
         list->data[i].value = LIST_POISON;
-        list->data[i].next = i + 1;
+        list->data[i].next  = i + 1;
     }
 
     /* Last free element addresses to null */
-    list->data[capacity - 1].prev = -1;
+    list->data[capacity - 1].prev  = -1;
     list->data[capacity - 1].value = LIST_POISON;
-    list->data[capacity - 1].next = 0;
+    list->data[capacity - 1].next  = 0;
 
     LIST_CALL_DUMP(list, "ctor", "DUMP_CTOR_CAP=", (int) capacity);
 
@@ -111,22 +111,22 @@ ListErr_t ListInsertAfter(List_t* list, int pos, elem_t value, int* insert_pos)
         }
     }
 
-    int cur_index  = list->free;
-    int pos_next   = list->data[pos].next;
+    int cur_index = list->free;
+    int pos_next  = list->data[pos].next;
 
     /* set new free element */
     list->free = list->data[list->free].next;
 
     /* connect previous element to current */
-    list->data[pos].next       = cur_index;
+    list->data[pos].next        = cur_index;
 
     /* connect current element to previous and next */
-    list->data[cur_index].prev = pos;
+    list->data[cur_index].prev  = pos;
     list->data[cur_index].value = value;
-    list->data[cur_index].next = pos_next;
+    list->data[cur_index].next  = pos_next;
 
     /* connect next element to current */
-    list->data[pos_next].prev  = cur_index;
+    list->data[pos_next].prev   = cur_index;
 
     *insert_pos = cur_index;
 
@@ -168,22 +168,22 @@ ListErr_t ListInsertBefore(List_t* list, int pos, elem_t value, int* insert_pos)
         }
     }
 
-    int cur_index  = list->free;
-    int pos_prev   = list->data[pos].prev;
+    int cur_index = list->free;
+    int pos_prev  = list->data[pos].prev;
 
     /* set new free element */
     list->free = list->data[list->free].next;
 
     /* connect previous element to current */
-    list->data[pos_prev].next  = cur_index;
+    list->data[pos_prev].next   = cur_index;
 
     /* connect current element to previous and next */
-    list->data[cur_index].prev = pos_prev;
+    list->data[cur_index].prev  = pos_prev;
     list->data[cur_index].value = value;
-    list->data[cur_index].next = pos;
+    list->data[cur_index].next  = pos;
 
     /* connect next element to current */
-    list->data[pos].prev       = cur_index;
+    list->data[pos].prev        = cur_index;
 
     *insert_pos = cur_index;
 
@@ -215,23 +215,23 @@ static ListErr_t ListRealloc(List_t* list)
     }
 
     size_t old_capacity = list->capacity;
-    list->capacity  = list->capacity * 2 + 1;
-    list->data      = new_data;
+    list->capacity      = list->capacity * 2 + 1;
+    list->data          = new_data;
 
     list->free = (int) old_capacity;
 
     /* Filling the free list */
     for (int i = (int) old_capacity; i < (int) list->capacity - 1; i++)
     {
-        list->data[i].prev = -1;
+        list->data[i].prev  = -1;
         list->data[i].value = LIST_POISON;
-        list->data[i].next = i + 1;
+        list->data[i].next  = i + 1;
     }
 
     /* Last free element addresses to null */
-    list->data[list->capacity - 1].prev = -1;
+    list->data[list->capacity - 1].prev  = -1;
     list->data[list->capacity - 1].value = LIST_POISON;
-    list->data[list->capacity - 1].next = 0;
+    list->data[list->capacity - 1].next  = 0;
 
     DEBUG_LIST_CHECK(list, "REALLOC_END_OLDCAP=", (int) list->capacity);
 
@@ -258,9 +258,9 @@ ListErr_t ListErase(List_t* list, int pos)
     int prev_ind = list->data[pos].prev;
 
     /* Connect pos to free and set poisons */
-    list->data[pos].prev = -1;
+    list->data[pos].prev  = -1;
     list->data[pos].value = LIST_POISON;
-    list->data[pos].next = list->free;
+    list->data[pos].next  = list->free;
 
     list->free = pos;
 
@@ -301,7 +301,7 @@ ListErr_t ListGetHead(List_t* list, int* head)
 
     LIST_CALL_DUMP(list, "get_head", "END_GET_HEAD_IND=", *head);
 
-    DPRINTF("> End ListGetHead\n");
+    DPRINTF("> End   ListGetHead\n");
 
     return LIST_SUCCESS;
 }
@@ -320,7 +320,7 @@ ListErr_t ListGetTail(List_t* list, int* tail)
 
     LIST_CALL_DUMP(list, "get_tail", "END_GET_TAIL_IND=", *tail);
 
-    DPRINTF("> End ListGetTail\n");
+    DPRINTF("> End   ListGetTail\n");
 
     return LIST_SUCCESS;
 }
