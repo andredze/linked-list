@@ -14,6 +14,10 @@ ListErr_t ListVerify(List_t* list)
     {
         return LIST_CAPACITY_EXCEEDS_MAX;
     }
+    if (list->size >= list->capacity)
+    {
+        return LIST_SIZE_EXCEEDS_CAPACITY;
+    }
     if (list->data == NULL)
     {
         return LIST_DATA_NULL;
@@ -43,49 +47,70 @@ ListErr_t ListVerify(List_t* list)
         return LIST_FREE_TOOBIG;
     }
 
-    int* nodes = (int*) calloc(list->capacity, sizeof(list->data[0].next));
-    int  count = 0;
+    int*   next_nodes = (int*) calloc(list->capacity, sizeof(list->data[0].next));
+    size_t next_count = 0;
 
     for (int i = list->data[0].next; i != 0; i = list->data[i].next)
     {
         if (list->data[i].value == LIST_POISON)
         {
-            free(nodes);
+            free(next_nodes);
             return LIST_FILLED_VALUE_IS_PZN;
         }
-        if (LinearSearch(nodes, list->capacity, i) != -1)
+        if (LinearSearch(next_nodes, list->capacity, i) != -1)
         {
-            free(nodes);
-            return LIST_MAIN_IS_CYCLED;
+            free(next_nodes);
+            return LIST_NEXT_IS_CYCLED;
         }
         if (list->data[i].next < 0)
         {
-            free(nodes);
+            free(next_nodes);
             return LIST_NEXT_NEGATIVE;
         }
         if ((size_t) list->data[i].next >= list->capacity)
         {
-            free(nodes);
+            free(next_nodes);
             return LIST_NEXT_TOOBIG;
+        }
+
+        next_nodes[next_count++] = i;
+    }
+
+    free(next_nodes);
+
+    if (next_count != list->size)
+    {
+        return LIST_SIZE_IS_WRONG;
+    }
+
+    int*   prev_nodes = (int*) calloc(list->capacity, sizeof(list->data[0].prev));
+    size_t prev_count = 0;
+
+    for (int i = list->data[0].prev; i != 0; i = list->data[i].prev)
+    {
+        if (LinearSearch(prev_nodes, list->capacity, i) != -1)
+        {
+            free(prev_nodes);
+            return LIST_PREV_IS_CYCLED;
         }
         if (list->data[i].prev < 0)
         {
-            free(nodes);
+            free(prev_nodes);
             return LIST_PREV_NEGATIVE;
         }
         if ((size_t) list->data[i].prev >= list->capacity)
         {
-            free(nodes);
+            free(prev_nodes);
             return LIST_PREV_TOOBIG;
         }
 
-        nodes[count++] = i;
+        prev_nodes[prev_count++] = i;
     }
 
-    free(nodes);
+    free(prev_nodes);
 
-    int* free_nodes = (int*) calloc(list->capacity, sizeof(list->data[0].next));
-    int  free_count = 0;
+    int*   free_nodes = (int*) calloc(list->capacity, sizeof(list->data[0].next));
+    size_t free_count = 0;
 
     for (int i = list->free; i != 0; i = list->data[i].next)
     {
@@ -119,6 +144,11 @@ ListErr_t ListVerify(List_t* list)
     }
 
     free(free_nodes);
+
+    if (next_count + free_count + 1 != list->capacity)
+    {
+        return LIST_CAP_IS_WRONG;
+    }
 
     return LIST_SUCCESS;
 }
@@ -207,7 +237,8 @@ ListErr_t ListDump(List_t* list, ListDumpInfo_t* dump_info)
     if (dump_info->error == LIST_HEAD_NEGATIVE        ||
         dump_info->error == LIST_HEAD_TOOBIG          ||
         dump_info->error == LIST_CAPACITY_EXCEEDS_MAX ||
-        dump_info->error == LIST_MAIN_IS_CYCLED       ||
+        dump_info->error == LIST_NEXT_IS_CYCLED       ||
+        dump_info->error == LIST_PREV_IS_CYCLED       ||
         dump_info->error == LIST_FREE_IS_CYCLED)
     {
         fclose(log_stream);
@@ -300,7 +331,7 @@ ListErr_t ListCreateDumpGraph(List_t* list, const char* image_name)
             list->data[0].next);
 
     /* make main list nodes */
-    for (int i = list->data[0].next; i > 0; i = list->data[i].next)
+    for (int i = 1; (size_t) i < list->capacity; i++)
     {
         fprintf(fp, "\tnode%d[label=\"{ idx = %d | value = ", i, i);
         if (list->data[i].value == LIST_POISON)
@@ -315,28 +346,90 @@ ListErr_t ListCreateDumpGraph(List_t* list, const char* image_name)
                 list->data[i].prev,
                 list->data[i].next);
     }
+    // for (int i = list->data[0].next; i > 0; i = list->data[i].next)
 
     /* make main list next edges */
     int i = list->data[0].next;
+    int next_i = 0;
+    int wrong_next = 0;
     if (i > 0 && list->data[i].next != 0)
     {
         fprintf(fp, "\t");
-        for (; list->data[i].next != 0; i = list->data[i].next)
+        int first_el = 1;
+        while (i > 0)
         {
-            fprintf(fp, "node%d->", i);
+            if (first_el)
+            {
+                fprintf(fp, "node%d", i);
+                first_el = 0;
+            }
+            else
+            {
+                fprintf(fp, "->node%d", i);
+            }
+            next_i = list->data[i].next;
+            if ((size_t) next_i >= list->capacity || next_i < 0)
+            {
+                wrong_next = 1;
+                break;
+            }
+            if (!(wrong_next))
+            {
+                i = next_i;
+            }
         }
-        fprintf(fp, "node%d [color = \"#640000\"];\n", i);
+        if (!(wrong_next))
+        {
+            fprintf(fp, " [color = \"#000064\"];\n");
+        }
+        else
+        {
+            fprintf(fp, " [color = \"#000064\"];\n"
+                    "\twrong_next[shape = \"octagon\", color = \"#640000\", fillcolor = \"#FFC0C0\", fontcolor = \"#640000\", label=\"idx = %d\"];\n"
+                    "\tnode%d->wrong_next [color = \"#640000\"];\n", next_i, i);
+        }
     }
 
     /* make main list prev edges */
+    int prev_i = 0;
+    int wrong_prev = 0;
+    i = list->data[0].prev;
     if (i > 0 && list->data[i].prev > 0)
     {
         fprintf(fp, "\t");
-        for (; list->data[i].prev > 0; i = list->data[i].prev)
+        int first_el = 1;
+        while (i > 0)
         {
-            fprintf(fp, "node%d->", i);
+            if (first_el)
+            {
+                fprintf(fp, "node%d", i);
+                first_el = 0;
+            }
+            else
+            {
+                fprintf(fp, "->node%d", i);
+            }
+            prev_i = list->data[i].prev;
+            if ((size_t) prev_i >= list->capacity || prev_i < 0)
+            {
+                wrong_prev = 1;
+                break;
+            }
+            if (!(wrong_prev))
+            {
+                i = prev_i;
+            }
         }
-        fprintf(fp, "node%d [color = \"#000064\"];\n", i);
+        if (!(wrong_prev))
+        {
+            fprintf(fp, "[color = \"#F4A460\"];\n");
+        }
+        else
+        {
+            fprintf(fp, " [color = \"#F4A460\"];\n"
+                        "\twrong_prev[shape = \"octagon\", color = \"#640000\", fillcolor = \"#FFC0C0\", fontcolor = \"#640000\", label=\"idx = %d\"];\n"
+                        "\tnode%d->wrong_prev [color = \"#640000\"];\n", prev_i, i);
+        }
     }
 
     /* make free list nodes */

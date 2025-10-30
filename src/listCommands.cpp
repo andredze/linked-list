@@ -35,7 +35,8 @@ ListErr_t ListCtor(List_t* list, size_t capacity)
     }
 
     list->capacity = capacity;
-    list->free     =  1;
+    list->size     = 0;
+    list->free     = 1;
 
     /* Filling the null element */
     list->data[0].prev  = 0; /* tail */
@@ -130,6 +131,8 @@ ListErr_t ListInsertAfter(List_t* list, int pos, elem_t value, int* insert_pos)
 
     *insert_pos = cur_index;
 
+    list->size += 1;
+
     DEBUG_LIST_CHECK(list, "END_INSERT_AFTER_", pos);
 
     LIST_CALL_DUMP(list, "insert", "DUMP_INSERT_AFTER_", pos);
@@ -186,6 +189,8 @@ ListErr_t ListInsertBefore(List_t* list, int pos, elem_t value, int* insert_pos)
     list->data[pos].prev        = cur_index;
 
     *insert_pos = cur_index;
+
+    list->size += 1;
 
     DEBUG_LIST_CHECK(list, "END_INSERT_BEFORE_", pos);
 
@@ -277,6 +282,8 @@ ListErr_t ListErase(List_t* list, int pos)
 
     list->data[prev_ind].next = next_ind;
     list->data[next_ind].prev = prev_ind;
+
+    list->size -= 1;
 
     DEBUG_LIST_CHECK(list, "END_ERASE_", pos);
 
