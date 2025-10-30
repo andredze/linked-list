@@ -236,10 +236,7 @@ ListErr_t ListDump(List_t* list, ListDumpInfo_t* dump_info)
 
     if (dump_info->error == LIST_HEAD_NEGATIVE        ||
         dump_info->error == LIST_HEAD_TOOBIG          ||
-        dump_info->error == LIST_CAPACITY_EXCEEDS_MAX ||
-        dump_info->error == LIST_NEXT_IS_CYCLED       ||
-        dump_info->error == LIST_PREV_IS_CYCLED       ||
-        dump_info->error == LIST_FREE_IS_CYCLED)
+        dump_info->error == LIST_CAPACITY_EXCEEDS_MAX)
     {
         fclose(log_stream);
         return LIST_SUCCESS;
@@ -299,7 +296,7 @@ ListErr_t ListCreateDumpGraph(List_t* list, const char* image_name)
             "color = \"#3E3A22\", "
             "fillcolor=\"#E3DFC9\", "
             "fontcolor = \"#3E3A22\"];\n"
-            "\t");
+            "\tedge [constraint=false]; ");
 
     /* Create invisible edges for all nodes */
     for (size_t i = 0; i < list->capacity - 1; i++)
@@ -312,11 +309,7 @@ ListErr_t ListCreateDumpGraph(List_t* list, const char* image_name)
     }
 
     /* add null node */
-    fprintf(fp,
-            "\tnode0["
-            "color = \"#3E3A22\", "
-            "fillcolor = \"#ecede8\", "
-            "fontcolor = \"#3E3A22\", "
+    fprintf(fp, "\tnode0[color = \"#3E3A22\", fillcolor = \"#ecede8\", fontcolor = \"#3E3A22\", "
             "label=\"{ idx = 0 | value = ");
     if (list->data[0].value == LIST_POISON)
     {
@@ -326,13 +319,28 @@ ListErr_t ListCreateDumpGraph(List_t* list, const char* image_name)
     {
         fprintf(fp, SPEC, list->data[0].value);
     }
-    fprintf(fp, " | { prev = %d | next = %d }}\"];\n",
-            list->data[0].prev,
-            list->data[0].next);
+    fprintf(fp, " | { prev = %d | next = %d }}\"];\n", list->data[0].prev, list->data[0].next);
 
-    /* make main list nodes */
+    /* make list nodes */
     for (int i = 1; (size_t) i < list->capacity; i++)
     {
+        /* if free */
+        if (list->data[i].prev == -1)
+        {
+            fprintf(fp, "\tnode%d [fillcolor=\"#C0FFC0\", color=\"#006400\", fontcolor = \"#005300\", label=\"{ idx = %d | value = ", i, i);
+            if (list->data[i].value == LIST_POISON)
+            {
+                fprintf(fp, "PZN");
+            }
+            else
+            {
+                fprintf(fp, SPEC, list->data[i].value);
+            }
+            fprintf(fp, " | { prev = %d | next = %d }}\"];\n", list->data[i].prev, list->data[i].next);
+
+            continue;
+        }
+        /* else */
         fprintf(fp, "\tnode%d[label=\"{ idx = %d | value = ", i, i);
         if (list->data[i].value == LIST_POISON)
         {
@@ -346,127 +354,57 @@ ListErr_t ListCreateDumpGraph(List_t* list, const char* image_name)
                 list->data[i].prev,
                 list->data[i].next);
     }
-    // for (int i = list->data[0].next; i > 0; i = list->data[i].next)
 
-    /* make main list next edges */
-    int i = list->data[0].next;
-    int next_i = 0;
-    int wrong_next = 0;
-    if (i > 0 && list->data[i].next != 0)
+    /* make all edges */
+    for (size_t pos = 1; pos < list->capacity; pos++)
     {
-        fprintf(fp, "\t");
-        int first_el = 1;
-        while (i > 0)
+        int next = list->data[pos].next;
+        int prev = list->data[pos].prev;
+
+        if (prev == -1 && next == 0)
         {
-            if (first_el)
+            continue;
+        }
+
+        if (prev == -1)
+        {
+            if ((size_t) next < list->capacity && next >= 0)
             {
-                fprintf(fp, "node%d", i);
-                first_el = 0;
+                fprintf(fp, "\tnode%zu->node%d [color = \"#006400\", style=dashed];\n", pos, next);
             }
             else
             {
-                fprintf(fp, "->node%d", i);
+                fprintf(fp, "\twrong_next%zu[shape = \"octagon\", color = \"#640000\", fillcolor = \"#FFC0C0\", fontcolor = \"#640000\", label=\"idx = %d\"];\n", pos, next);
+                fprintf(fp, "\tnode%zu->wrong_next%zu [color = \"#640000\", constraint=true];\n", pos, pos);
             }
-            next_i = list->data[i].next;
-            if ((size_t) next_i >= list->capacity || next_i < 0)
-            {
-                wrong_next = 1;
-                break;
-            }
-            if (!(wrong_next))
-            {
-                i = next_i;
-            }
-        }
-        if (!(wrong_next))
-        {
-            fprintf(fp, " [color = \"#000064\"];\n");
-        }
-        else
-        {
-            fprintf(fp, " [color = \"#000064\"];\n"
-                    "\twrong_next[shape = \"octagon\", color = \"#640000\", fillcolor = \"#FFC0C0\", fontcolor = \"#640000\", label=\"idx = %d\"];\n"
-                    "\tnode%d->wrong_next [color = \"#640000\"];\n", next_i, i);
-        }
-    }
 
-    /* make main list prev edges */
-    int prev_i = 0;
-    int wrong_prev = 0;
-    i = list->data[0].prev;
-    if (i > 0 && list->data[i].prev > 0)
-    {
-        fprintf(fp, "\t");
-        int first_el = 1;
-        while (i > 0)
+            continue;
+        }
+
+        if (next != 0)
         {
-            if (first_el)
+            if ((size_t) next < list->capacity && next >= 0)
             {
-                fprintf(fp, "node%d", i);
-                first_el = 0;
+                fprintf(fp, "\tnode%zu->node%d [color = \"#000064\"];\n", pos, next);
             }
             else
             {
-                fprintf(fp, "->node%d", i);
-            }
-            prev_i = list->data[i].prev;
-            if ((size_t) prev_i >= list->capacity || prev_i < 0)
-            {
-                wrong_prev = 1;
-                break;
-            }
-            if (!(wrong_prev))
-            {
-                i = prev_i;
+                fprintf(fp, "\twrong_next%zu[shape = \"octagon\", color = \"#640000\", fillcolor = \"#FFC0C0\", fontcolor = \"#640000\", label=\"idx = %d\"];\n", pos, next);
+                fprintf(fp, "\tnode%zu->wrong_next%zu [color = \"#640000\", constraint=true];\n", pos, pos);
             }
         }
-        if (!(wrong_prev))
-        {
-            fprintf(fp, "[color = \"#F4A460\"];\n");
-        }
-        else
-        {
-            fprintf(fp, " [color = \"#F4A460\"];\n"
-                        "\twrong_prev[shape = \"octagon\", color = \"#640000\", fillcolor = \"#FFC0C0\", fontcolor = \"#640000\", label=\"idx = %d\"];\n"
-                        "\tnode%d->wrong_prev [color = \"#640000\"];\n", prev_i, i);
-        }
-    }
 
-    /* make free list nodes */
-    for (int j = list->free; j != 0; j = list->data[j].next)
-    {
-        fprintf(fp,
-                "\tnode%d"
-                "[fillcolor=\"#C0FFC0\", "
-                "color=\"#006400\", "
-                "fontcolor = \"#005300\", "
-                "label=\"{ idx = %d | value = ",
-                j, j);
-        if (list->data[j].value == LIST_POISON)
+        if (prev != 0)
         {
-            fprintf(fp, "PZN");
-        }
-        else
-        {
-            fprintf(fp, SPEC, list->data[j].value);
-        }
-        fprintf(fp, " | { prev = %d | next = %d }}\"];\n",
-                list->data[j].prev,
-                list->data[j].next);
-    }
-
-    /* make free list edges */
-    int j = list->free;
-    if (j != 0 && list->data[j].next != 0)
-    {
-        fprintf(fp, "\t");
-        for (; list->data[j].next != 0; j = list->data[j].next)
-        {
-            fprintf(fp, "node%d->", j);
-        }
-        if (j != 0)
-        {
-            fprintf(fp, "node%d [color = \"#006400\", style=dashed];\n", j);
+            if ((size_t) prev < list->capacity && prev >= 0)
+            {
+                fprintf(fp, "\tnode%zu->node%d [color = \"#F4A460\"];\n", pos, prev);
+            }
+            else
+            {
+                fprintf(fp, "\twrong_prev%zu[shape = \"octagon\", color = \"#640000\", fillcolor = \"#FFC0C0\", fontcolor = \"#640000\", label=\"idx = %d\"];\n", pos, prev);
+                fprintf(fp, "\tnode%zu->wrong_prev%zu [color = \"#640000\", constraint=true];\n", pos, pos);
+            }
         }
     }
 
@@ -478,7 +416,8 @@ ListErr_t ListCreateDumpGraph(List_t* list, const char* image_name)
                 "\ttail; head; free;\n"
                 "\tedge["
                 "color=\"#70421A\", "
-                "arrowhead=none]");
+                "arrowhead=none]\n"
+                "edge [constraint=true];\n");
 
     /* make head, tail and free edges to the elements */
     if (list->data[0].prev >= 0)
@@ -489,6 +428,7 @@ ListErr_t ListCreateDumpGraph(List_t* list, const char* image_name)
     {
         fprintf(fp, "\thead->node%d;\n", list->data[0].next);
     }
+
     fprintf(fp, "\tfree->node%d;\n"
                 "\t{ rank=same; tail; head; free; }\n"
                 "\t{ rank=same; ",
@@ -501,6 +441,7 @@ ListErr_t ListCreateDumpGraph(List_t* list, const char* image_name)
     }
 
     fprintf(fp, "}\n}\n");
+
     fclose(fp);
 
     return LIST_SUCCESS;

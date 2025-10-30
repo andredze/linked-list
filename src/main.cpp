@@ -14,7 +14,7 @@ int main()
 
     int insert_pos = 0;
 
-    if (ListCtor        (&list, 8))
+    if (ListCtor        (&list, 10))
         break;
 
     if (ListInsertAfter (&list, 0, 10, &insert_pos))
@@ -30,6 +30,9 @@ int main()
         break;
 
     if (ListInsertAfter (&list, 4, 50, &insert_pos))
+        break;
+
+    if (ListInsertBefore(&list, 5, 45, &insert_pos))
         break;
 
     list.data[3].prev = 1337;
