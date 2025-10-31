@@ -88,7 +88,9 @@ typedef enum ListErr
     LIST_FILLED_VALUE_IS_PZN,
     LIST_SIZE_EXCEEDS_CAPACITY,
     LIST_SIZE_IS_WRONG,
-    LIST_CAP_IS_WRONG
+    LIST_CAP_IS_WRONG,
+    LIST_NEXT_WRONG,
+    LIST_PREV_WRONG
 } ListErr_t;
 
 //——————————————————————————————————————————————————————————————————————————————————————————
@@ -132,7 +134,9 @@ const char* const LIST_STR_ERRORS[] =
     [LIST_FILLED_VALUE_IS_PZN]   = "LIST_FILLED_VALUE_IS_PZN",
     [LIST_SIZE_EXCEEDS_CAPACITY] = "LIST_SIZE_EXCEEDS_CAPACITY",
     [LIST_SIZE_IS_WRONG]         = "LIST_SIZE_IS_WRONG",
-    [LIST_CAP_IS_WRONG]          = "LIST_CAP_IS_WRONG"
+    [LIST_CAP_IS_WRONG]          = "LIST_CAP_IS_WRONG",
+    [LIST_NEXT_WRONG]            = "LIST_NEXT_WRONG",
+    [LIST_PREV_WRONG]            = "LIST_PREV_WRONG"
 };
 
 //——————————————————————————————————————————————————————————————————————————————————————————

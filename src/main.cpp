@@ -14,8 +14,11 @@ int main()
 
     int insert_pos = 0;
 
-    if (ListCtor        (&list, 10))
+    if (ListCtor        (&list, 4))
         break;
+
+    // if (ListCtor        (&list, 0))
+    //     break;
 
     if (ListInsertAfter (&list, 0, 10, &insert_pos))
         break;
@@ -23,10 +26,13 @@ int main()
     if (ListInsertAfter (&list, 1, 20,  &insert_pos))
         break;
 
+    // if (ListInsertBefore (&list, 2, 30, &insert_pos))
+    //     break;
+
     if (ListInsertAfter (&list, 2, 30, &insert_pos))
         break;
 
-    if (ListInsertAfter (&list, 3, 40, &insert_pos))
+    if (ListInsertBefore(&list, 3, 40, &insert_pos))
         break;
 
     if (ListInsertAfter (&list, 4, 50, &insert_pos))
@@ -35,11 +41,28 @@ int main()
     if (ListInsertBefore(&list, 5, 45, &insert_pos))
         break;
 
-    list.data[3].prev = 1337;
-    // list.size = 2;
-    // list.data[3].prev = 4;
+    // list.data[7].next = 4;
 
-    if (ListInsertAfter (&list, 3, 35, &insert_pos))
+    if (ListInsertAfter (&list, 4, 50, &insert_pos))
+        break;
+
+    if (ListInsertAfter (&list, 1, 50, &insert_pos))
+        break;
+
+    // list.data[3].prev = 84;
+    // list.size = 2;
+    list.data[3].prev = 4;
+
+    if (ListInsertAfter (&list, 8, 35, &insert_pos))
+        break;
+
+    if (ListInsertBefore(&list, 3, 45, &insert_pos))
+        break;
+
+    if (ListInsertBefore(&list, 4, 45, &insert_pos))
+        break;
+
+    if (ListInsertBefore(&list, 4, 45, &insert_pos))
         break;
 
     if (ListErase       (&list, 2))

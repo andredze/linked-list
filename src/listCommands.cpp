@@ -54,7 +54,7 @@ ListErr_t ListCtor(List_t* list, size_t capacity)
     /* Last free element addresses to null */
     list->data[capacity - 1].prev  = -1;
     list->data[capacity - 1].value = LIST_POISON;
-    list->data[capacity - 1].next  = 0;
+    list->data[capacity - 1].next  = -1;
 
     LIST_CALL_DUMP(list, "ctor", "DUMP_CTOR_CAP=", (int) capacity);
 
@@ -104,7 +104,7 @@ ListErr_t ListInsertAfter(List_t* list, int pos, elem_t value, int* insert_pos)
         return LIST_NO_SUCH_ELEMENT;
     }
 
-    if (list->free == 0)
+    if (list->free == -1)
     {
         if ((error = ListRealloc(list)) != LIST_SUCCESS)
         {
@@ -163,7 +163,7 @@ ListErr_t ListInsertBefore(List_t* list, int pos, elem_t value, int* insert_pos)
         return LIST_NO_SUCH_ELEMENT;
     }
 
-    if (list->free == 0)
+    if (list->free == -1)
     {
         if ((error = ListRealloc(list)) != LIST_SUCCESS)
         {
@@ -203,15 +203,59 @@ ListErr_t ListInsertBefore(List_t* list, int pos, elem_t value, int* insert_pos)
 
 //------------------------------------------------------------------------------------------
 
+// static ListErr_t ListRealloc(List_t* list)
+// {
+//     DPRINTF("\t> Start ListRealloc()\n");
+//
+//     DEBUG_LIST_CHECK(list, "REALLOC_START_OLDCAP=", (int) list->capacity);
+//
+//     size_t new_size = sizeof(list->data[0]) * (list->capacity * 2 + 1);
+//
+//     Node_t* new_data = (Node_t*) realloc(list->data, new_size);
+//
+//     if (new_data == NULL)
+//     {
+//         PRINTERR("List data realloc failed");
+//         return LIST_DATA_REALLOC_ERROR;
+//     }
+//
+//     size_t old_capacity = list->capacity;
+//     list->capacity      = list->capacity * 2 + 1;
+//     list->data          = new_data;
+//
+//     list->free = (int) old_capacity;
+//
+//     /* Filling the free list */
+//     for (int i = (int) old_capacity; i < (int) list->capacity - 1; i++)
+//     {
+//         list->data[i].prev  = -1;
+//         list->data[i].value = LIST_POISON;
+//         list->data[i].next  = i + 1;
+//     }
+//
+//     /* Last free element addresses to null */
+//     list->data[list->capacity - 1].prev  = -1;
+//     list->data[list->capacity - 1].value = LIST_POISON;
+//     list->data[list->capacity - 1].next  = 0;
+//
+//     DEBUG_LIST_CHECK(list, "REALLOC_END_OLDCAP=", (int) list->capacity);
+//
+//     DPRINTF("\t> End   ListRealloc\n");
+//
+//     return LIST_SUCCESS;
+// }
+
+//------------------------------------------------------------------------------------------
+
 static ListErr_t ListRealloc(List_t* list)
 {
     DPRINTF("\t> Start ListRealloc()\n");
 
     DEBUG_LIST_CHECK(list, "REALLOC_START_OLDCAP=", (int) list->capacity);
 
-    size_t new_size = sizeof(list->data[0]) * (list->capacity * 2 + 1);
+    size_t capacity  = list->capacity * 2 + 1;
 
-    Node_t* new_data = (Node_t*) realloc(list->data, new_size);
+    Node_t* new_data = (Node_t*) calloc(capacity, sizeof(list->data[0]));
 
     if (new_data == NULL)
     {
@@ -219,24 +263,37 @@ static ListErr_t ListRealloc(List_t* list)
         return LIST_DATA_REALLOC_ERROR;
     }
 
-    size_t old_capacity = list->capacity;
-    list->capacity      = list->capacity * 2 + 1;
-    list->data          = new_data;
+    new_data[0].next = 1;
+    new_data[0].prev = (int) list->size;
 
-    list->free = (int) old_capacity;
+    int ind = 1;
 
-    /* Filling the free list */
-    for (int i = (int) old_capacity; i < (int) list->capacity - 1; i++)
+    for (int pos = list->data[0].next; pos > 0; pos = list->data[pos].next)
     {
-        list->data[i].prev  = -1;
-        list->data[i].value = LIST_POISON;
-        list->data[i].next  = i + 1;
+        DPRINTF("ind = %d;\n", ind);
+        new_data[ind].prev  = ind - 1;
+        new_data[ind].value = list->data[pos].value;
+        new_data[ind].next  = ind + 1;
+        ind++;
     }
 
-    /* Last free element addresses to null */
-    list->data[list->capacity - 1].prev  = -1;
-    list->data[list->capacity - 1].value = LIST_POISON;
-    list->data[list->capacity - 1].next  = 0;
+    new_data[list->size].next = 0;
+
+    list->free = ind;
+
+    for (; (size_t) ind < capacity; ind++)
+    {
+        new_data[ind].prev  = -1;
+        new_data[ind].value = LIST_POISON;
+        new_data[ind].next  = ind + 1;
+    }
+
+    new_data[capacity - 1].next = -1;
+
+    free(list->data);
+
+    list->capacity = capacity;
+    list->data     = new_data;
 
     DEBUG_LIST_CHECK(list, "REALLOC_END_OLDCAP=", (int) list->capacity);
 
