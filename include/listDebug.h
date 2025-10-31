@@ -90,7 +90,8 @@ typedef enum ListErr
     LIST_SIZE_IS_WRONG,
     LIST_CAP_IS_WRONG,
     LIST_NEXT_WRONG,
-    LIST_PREV_WRONG
+    LIST_PREV_WRONG,
+    LIST_FLAG_IS_WRONG
 } ListErr_t;
 
 //——————————————————————————————————————————————————————————————————————————————————————————
@@ -136,7 +137,8 @@ const char* const LIST_STR_ERRORS[] =
     [LIST_SIZE_IS_WRONG]         = "LIST_SIZE_IS_WRONG",
     [LIST_CAP_IS_WRONG]          = "LIST_CAP_IS_WRONG",
     [LIST_NEXT_WRONG]            = "LIST_NEXT_WRONG",
-    [LIST_PREV_WRONG]            = "LIST_PREV_WRONG"
+    [LIST_PREV_WRONG]            = "LIST_PREV_WRONG",
+    [LIST_FLAG_IS_WRONG]         = "LIST_FLAG_IS_WRONG"
 };
 
 //——————————————————————————————————————————————————————————————————————————————————————————
@@ -157,8 +159,19 @@ typedef struct ListDumpInfo
 int LinearSearch(int* array, size_t size, int elem);
 
 ListErr_t ListVerify          (List_t* list);
+ListErr_t ListVerifyNext      (List_t* list, size_t* next_count_ptr);
+ListErr_t ListVerifyPrev      (List_t* list, size_t* prev_count_ptr);
+ListErr_t ListVerifyFree      (List_t* list, size_t* free_count_ptr);
 ListErr_t ListDump            (List_t* list, ListDumpInfo_t* dump_info);
 ListErr_t ListCreateDumpGraph (List_t* list, const char* image_name);
+
+int MakeNode(const char* node_name,
+             const char* label,
+             const char* color,
+             const char* fillcolor,
+             const char* fontcolor,
+             const char* shape,
+             FILE* fp);
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
