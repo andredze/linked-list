@@ -26,7 +26,7 @@ SOURCES = src/main.cpp 		   \
 		  src/listCommands.cpp \
 		  src/listDebug.cpp
 
-EXECUTABLE = run.exe
+EXECUTABLE = run
 
 DOT = graphs/dot/*.dot
 

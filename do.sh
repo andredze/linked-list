@@ -1,2 +1,2 @@
-./run.exe ^
+./run ^
 ./makesvg.sh

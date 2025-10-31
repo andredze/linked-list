@@ -9,7 +9,7 @@
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
-ListErr_t ListCtor         (List_t* list, size_t capacity);
+ListErr_t ListCtor         (List_t* list, size_t capacity, int do_linear_realloc);
 ListErr_t ListDtor         (List_t* list);
 ListErr_t ListErase        (List_t* list, int  pos);
 ListErr_t ListCheckPos     (List_t* list, int  pos);

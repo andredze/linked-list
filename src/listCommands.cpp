@@ -2,11 +2,12 @@
 
 //------------------------------------------------------------------------------------------
 
-static ListErr_t ListRealloc(List_t* list);
+static ListErr_t ListRealloc       (List_t* list);
+static ListErr_t ListReallocLinear (List_t* list);
 
 //------------------------------------------------------------------------------------------
 
-ListErr_t ListCtor(List_t* list, size_t capacity)
+ListErr_t ListCtor(List_t* list, size_t capacity, int do_linear_realloc)
 {
     DPRINTF("> Start ListCtor(capacity = %zu)\n", capacity);
 
@@ -33,6 +34,9 @@ ListErr_t ListCtor(List_t* list, size_t capacity)
         PRINTERR("LIST_CALLOC_ERROR");
         return LIST_CALLOC_ERROR;
     }
+
+    list->do_linear_realloc = do_linear_realloc;
+    list->is_sorted         = 1;
 
     list->capacity = capacity;
     list->size     = 0;
@@ -106,10 +110,16 @@ ListErr_t ListInsertAfter(List_t* list, int pos, elem_t value, int* insert_pos)
 
     if (list->free == -1)
     {
-        if ((error = ListRealloc(list)) != LIST_SUCCESS)
+        error = list->do_linear_realloc ? ListReallocLinear(list) : ListRealloc(list);
+        if (error != LIST_SUCCESS)
         {
             return error;
         }
+    }
+
+    if (pos != list->data[0].prev)
+    {
+        list->is_sorted = 0;
     }
 
     int cur_index = list->free;
@@ -165,10 +175,16 @@ ListErr_t ListInsertBefore(List_t* list, int pos, elem_t value, int* insert_pos)
 
     if (list->free == -1)
     {
-        if ((error = ListRealloc(list)) != LIST_SUCCESS)
+        error = list->do_linear_realloc ? ListReallocLinear(list) : ListRealloc(list);
+        if (error != LIST_SUCCESS)
         {
             return error;
         }
+    }
+
+    if (pos != list->data[0].prev)
+    {
+        list->is_sorted = 0;
     }
 
     int cur_index = list->free;
@@ -203,57 +219,54 @@ ListErr_t ListInsertBefore(List_t* list, int pos, elem_t value, int* insert_pos)
 
 //------------------------------------------------------------------------------------------
 
-// static ListErr_t ListRealloc(List_t* list)
-// {
-//     DPRINTF("\t> Start ListRealloc()\n");
-//
-//     DEBUG_LIST_CHECK(list, "REALLOC_START_OLDCAP=", (int) list->capacity);
-//
-//     size_t new_size = sizeof(list->data[0]) * (list->capacity * 2 + 1);
-//
-//     Node_t* new_data = (Node_t*) realloc(list->data, new_size);
-//
-//     if (new_data == NULL)
-//     {
-//         PRINTERR("List data realloc failed");
-//         return LIST_DATA_REALLOC_ERROR;
-//     }
-//
-//     size_t old_capacity = list->capacity;
-//     list->capacity      = list->capacity * 2 + 1;
-//     list->data          = new_data;
-//
-//     list->free = (int) old_capacity;
-//
-//     /* Filling the free list */
-//     for (int i = (int) old_capacity; i < (int) list->capacity - 1; i++)
-//     {
-//         list->data[i].prev  = -1;
-//         list->data[i].value = LIST_POISON;
-//         list->data[i].next  = i + 1;
-//     }
-//
-//     /* Last free element addresses to null */
-//     list->data[list->capacity - 1].prev  = -1;
-//     list->data[list->capacity - 1].value = LIST_POISON;
-//     list->data[list->capacity - 1].next  = 0;
-//
-//     DEBUG_LIST_CHECK(list, "REALLOC_END_OLDCAP=", (int) list->capacity);
-//
-//     DPRINTF("\t> End   ListRealloc\n");
-//
-//     return LIST_SUCCESS;
-// }
-
-//------------------------------------------------------------------------------------------
-
 static ListErr_t ListRealloc(List_t* list)
 {
     DPRINTF("\t> Start ListRealloc()\n");
 
     DEBUG_LIST_CHECK(list, "REALLOC_START_OLDCAP=", (int) list->capacity);
 
-    size_t capacity  = list->capacity * 2 + 1;
+    size_t  capacity = list->capacity * 2 + 1;
+
+    Node_t* new_data = (Node_t*) realloc(list->data, capacity * sizeof(list->data[0]));
+
+    if (new_data == NULL)
+    {
+        PRINTERR("List data realloc failed");
+        return LIST_DATA_REALLOC_ERROR;
+    }
+
+    list->capacity = capacity;
+    list->data     = new_data;
+
+    list->free = (int) list->capacity;
+
+    /* Filling the free list */
+    for (int i = list->free; i < (int) list->capacity; i++)
+    {
+        list->data[i].prev  = -1;
+        list->data[i].value = LIST_POISON;
+        list->data[i].next  = i + 1;
+    }
+
+    /* Last free element addresses to nothing */
+    list->data[list->capacity - 1].next = -1;
+
+    DEBUG_LIST_CHECK(list, "REALLOC_END_OLDCAP=", (int) list->capacity);
+
+    DPRINTF("\t> End   ListRealloc\n");
+
+    return LIST_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------
+
+static ListErr_t ListReallocLinear(List_t* list)
+{
+    DPRINTF("\t> Start ListReallocLinear()\n");
+
+    DEBUG_LIST_CHECK(list, "REALLOC_LINEAR_START_OLDCAP=", (int) list->capacity);
+
+    size_t  capacity = list->capacity * 2 + 1;
 
     Node_t* new_data = (Node_t*) calloc(capacity, sizeof(list->data[0]));
 
@@ -292,12 +305,13 @@ static ListErr_t ListRealloc(List_t* list)
 
     free(list->data);
 
-    list->capacity = capacity;
-    list->data     = new_data;
+    list->capacity  = capacity;
+    list->data      = new_data;
+    list->is_sorted = 1;
 
-    DEBUG_LIST_CHECK(list, "REALLOC_END_OLDCAP=", (int) list->capacity);
+    DEBUG_LIST_CHECK(list, "REALLOC_LINEAR_END_OLDCAP=", (int) list->capacity);
 
-    DPRINTF("\t> End   ListRealloc\n");
+    DPRINTF("\t> End   ListReallocLinear\n");
 
     return LIST_SUCCESS;
 }
@@ -316,6 +330,11 @@ ListErr_t ListErase(List_t* list, int pos)
         return error;
     }
 
+    if (pos != list->data[0].prev)
+    {
+        list->is_sorted = 0;
+    }
+
     int next_ind = list->data[pos].next;
     int prev_ind = list->data[pos].prev;
 
@@ -326,11 +345,11 @@ ListErr_t ListErase(List_t* list, int pos)
 
     list->free = pos;
 
-    DPRINTF("\tprev_ind = %d;\n"
-            "\tnext_ind = %d;\n"
-            "\thead     = %d;\n"
-            "\ttail     = %d;\n"
-            "\tpos      = %d;\n",
+    DPRINTF(R"(\tprev_ind = %d;\n
+            \tnext_ind = %d;\n
+            \thead     = %d;\n
+            \ttail     = %d;\n
+            \tpos      = %d;\n)",
             prev_ind,
             next_ind,
             list->data[0].next,
