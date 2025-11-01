@@ -168,6 +168,25 @@ ListErr_t ListCreateDumpGraph (List_t* list, const char* image_name);
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
+int MakeListEdge       (int pos, List_t* list, FILE* fp);
+
+int ProcessFreeEdgeCase(
+    int   pos,
+    int   prev,
+    int   next,
+    int   next_limits_cross,
+    FILE* fp);
+
+int ProcessUncrossedLimitsEdge(
+    int     pos,
+    int     next,
+    int     prev_limits_cross,
+    int     next_limits_cross,
+    List_t* list,
+    FILE*   fp);
+
+//——————————————————————————————————————————————————————————————————————————————————————————
+
 int MakeNode(
     const char* name,
     const char* label,

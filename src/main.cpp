@@ -57,6 +57,8 @@ int main()
     // list.data[6].next = 4;
     list.data[6].prev = 4;
 
+    // list.data[8].next = 7;
+
     if (ListInsertAfter (&list, 8, 35, &insert_pos))
         break;
 

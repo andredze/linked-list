@@ -464,95 +464,7 @@ ListErr_t ListCreateDumpGraph(List_t* list, const char* image_name)
     /* make all edges */
     for (int pos = 1; pos < (int) list->capacity; pos++)
     {
-        int next = list->data[pos].next;
-        int prev = list->data[pos].prev;
-
-        int next_wrong = 0;
-        int prev_wrong = 0;
-
-        if (prev == -1 && next == 0)
-        {
-            continue;
-        }
-
-        next_wrong = ((size_t) next < list->capacity && next >= 0) == 0 ? 1 : 0;
-        prev_wrong = ((size_t) prev < list->capacity && prev >= 0) == 0 ? 1 : 0;
-
-        if (prev == -1 && next == -1)
-        {
-            continue;
-        }
-
-        if (prev == -1)
-        {
-            if (next_wrong)
-            {
-                MakeWrongNode(pos, next, "next", fp);
-                MakeWrongEdge(pos,       "next", fp);
-                continue;
-            }
-            else
-            {
-                MakeDefaultEdge(pos, next, "#006400", NULL, NULL, "dashed", fp);
-                continue;
-            }
-
-            continue;
-        }
-
-        if (!(prev_wrong) && list->data[prev].next != (int) pos)
-        {
-            if (list->data[list->data[prev].next].prev != prev)
-            {
-                char node[MAX_NODE_NAME_LEN] = "";
-                sprintf(node, "node%d", prev);
-
-                MakeNode(node, NULL, "#FFC0C0", NULL, NULL, NULL, fp);
-            }
-            MakeDefaultEdge(pos, prev, "#640000", NULL, NULL, "dashed", fp);
-        }
-
-        if (!(next_wrong) && !(prev_wrong))
-        {
-            if (next == 0)
-            {
-                continue;
-            }
-            if (list->data[next].prev != pos)
-            {
-                DPRINTF("next.prev = %d\n", list->data[next].prev);
-
-                if (list->data[next].prev < (int) list->capacity && list->data[list->data[next].prev].next != next)
-                {
-                    char node[MAX_NODE_NAME_LEN] = "";
-                    sprintf(node, "node%d", next);
-
-                    MakeNode(node, NULL, "#FFC0C0", NULL, NULL, NULL, fp);
-                }
-
-                MakeDefaultEdge(pos, next, "#640000", NULL, NULL, "dashed", fp);
-                continue;
-            }
-            MakeDefaultEdge(pos, next, "#000064", NULL, "both", NULL, fp);
-            continue;
-        }
-        if (next_wrong)
-        {
-            MakeWrongNode(pos, next, "next", fp);
-            MakeWrongEdge(pos,       "next", fp);
-        }
-        else
-        {
-            if (next != 0)
-            {
-                MakeDefaultEdge(pos, next, "#000064", NULL, NULL, NULL, fp);
-            }
-        }
-        if (prev_wrong)
-        {
-            MakeWrongNode(pos, prev, "prev", fp);
-            MakeWrongEdge(pos,       "prev", fp);
-        }
+        MakeListEdge(pos, list, fp);
     }
 
     MakeHeadTailFree(list, fp);
@@ -570,6 +482,139 @@ ListErr_t ListCreateDumpGraph(List_t* list, const char* image_name)
     fclose(fp);
 
     return LIST_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------
+
+int MakeListEdge(int pos, List_t* list, FILE* fp)
+{
+    assert(list != NULL);
+    assert(fp   != NULL);
+
+    int next = list->data[pos].next;
+    int prev = list->data[pos].prev;
+
+    if (prev == -1 && (next == 0 || next == -1))
+    {
+        return 0;
+    }
+
+    int next_limits_cross = ((size_t) next < list->capacity && next >= 0) == 0 ? 1 : 0;
+    int prev_limits_cross = ((size_t) prev < list->capacity && prev >= 0) == 0 ? 1 : 0;
+
+    if (ProcessFreeEdgeCase(pos, prev, next, next_limits_cross, fp) == 1)
+    {
+        return 0;
+    }
+
+    if (!(prev_limits_cross) && list->data[prev].next != pos)
+    {
+        if (list->data[list->data[prev].next].prev != prev)
+        {
+            char node[MAX_NODE_NAME_LEN] = "";
+            sprintf(node, "node%d", prev);
+
+            MakeNode(node, NULL, NULL, "#FFC0C0", NULL, NULL, fp);
+        }
+        MakeDefaultEdge(pos, prev, "#640000", NULL, NULL, "dashed", fp);
+    }
+
+    if (ProcessUncrossedLimitsEdge(pos, next,
+                                   prev_limits_cross,
+                                   next_limits_cross,
+                                   list, fp) == 1)
+    {
+        return 0;
+    }
+
+    if (next_limits_cross)
+    {
+        MakeWrongNode(pos, next, "next", fp);
+        MakeWrongEdge(pos,       "next", fp);
+    }
+    else
+    {
+        if (next != 0)
+        {
+            MakeDefaultEdge(pos, next, "#000064", NULL, NULL, NULL, fp);
+        }
+    }
+    if (prev_limits_cross)
+    {
+        MakeWrongNode(pos, prev, "prev", fp);
+        MakeWrongEdge(pos,       "prev", fp);
+    }
+
+    return 0;
+}
+
+//------------------------------------------------------------------------------------------
+
+int ProcessFreeEdgeCase(int pos, int prev, int next, int next_limits_cross, FILE* fp)
+{
+    assert(fp != NULL);
+
+    if (prev != -1)
+    {
+        return 0;
+    }
+
+    if (next_limits_cross)
+    {
+        MakeWrongNode(pos, next, "next", fp);
+        MakeWrongEdge(pos,       "next", fp);
+
+        return 0;
+    }
+
+    MakeDefaultEdge(pos, next, "#006400", NULL, NULL, "dashed", fp);
+
+    return 1;
+}
+
+//------------------------------------------------------------------------------------------
+
+int ProcessUncrossedLimitsEdge(int     pos,
+                               int     next,
+                               int     prev_limits_cross,
+                               int     next_limits_cross,
+                               List_t* list,
+                               FILE*   fp)
+{
+    assert(list != NULL);
+    assert(fp   != NULL);
+
+    if (next_limits_cross || prev_limits_cross)
+    {
+        return 0;
+    }
+
+    if (next == 0)
+    {
+        return 1;
+    }
+
+    if (list->data[next].prev == pos)
+    {
+        MakeDefaultEdge(pos, next, "#000064", NULL, "both", NULL, fp);
+
+        return 1;
+    }
+
+    DPRINTF("next.prev = %d\n", list->data[next].prev);
+
+    if (list->data[next].prev < (int) list->capacity &&
+        list->data[list->data[next].prev].next != next)
+    {
+        char node[MAX_NODE_NAME_LEN] = "";
+        sprintf(node, "node%d", next);
+
+        MakeNode(node, NULL, NULL, "#FFC0C0", NULL, NULL, fp);
+    }
+
+    MakeDefaultEdge(pos, next, "#640000", NULL, NULL, "dashed", fp);
+
+    return 1;
 }
 
 //------------------------------------------------------------------------------------------
@@ -600,7 +645,7 @@ int MakeDefaultNode(int index,
     }
     else
     {
-        current_pos += sprintf(current_pos + label, SPEC, index);
+        current_pos += sprintf(current_pos + label, SPEC, list->data[index].value);
     }
 
     sprintf(current_pos + label, " | { prev = %d | next = %d }}",
@@ -658,8 +703,8 @@ int MakeWrongNode(int         pos,
     char name [MAX_NODE_NAME_LEN] = "";
     char label[MAX_LABEL_LEN]     = "";
 
-    sprintf(name, "wrong_%s_%d", connection, pos);
-    sprintf(name, "idx = %d",    value);
+    sprintf (name,  "wrong_%s_%d", connection, pos);
+    sprintf (label, "idx = %d",    value);
 
     MakeNode(name, label, "#640000", "#FFC0C0", "#640000", "octagon", fp);
 
@@ -668,13 +713,13 @@ int MakeWrongNode(int         pos,
 
 //------------------------------------------------------------------------------------------
 
-int MakeDefaultEdge(int index1,
-                    int index2,
+int MakeDefaultEdge(int         index1,
+                    int         index2,
                     const char* color,
                     const char* constraint,
                     const char* dir,
                     const char* style,
-                    FILE* fp)
+                    FILE*       fp)
 {
     assert(fp != NULL);
 
@@ -691,9 +736,9 @@ int MakeDefaultEdge(int index1,
 
 //------------------------------------------------------------------------------------------
 
-int MakeWrongEdge(int pos,
+int MakeWrongEdge(int         pos,
                   const char* connection,
-                  FILE* fp)
+                  FILE*       fp)
 {
     assert(connection != NULL);
     assert(fp         != NULL);
@@ -717,7 +762,7 @@ int MakeEdge(const char* node1,
              const char* constraint,
              const char* dir,
              const char* style,
-             FILE* fp)
+             FILE*       fp)
 {
     assert(node1 != NULL);
     assert(node2 != NULL);
