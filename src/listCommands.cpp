@@ -2,6 +2,11 @@
 
 //------------------------------------------------------------------------------------------
 
+static ListErr_t ListInsert  (List_t* list, int pos, elem_t value,
+                              int* insert_pos, ListInsertType_t type);
+
+static ListErr_t ListCheckPos(List_t* list, int pos);
+
 static ListErr_t ListRealloc       (List_t* list);
 static ListErr_t ListReallocLinear (List_t* list);
 
@@ -67,7 +72,7 @@ ListErr_t ListCtor(List_t* list, size_t capacity, int do_linear_realloc)
 
 //------------------------------------------------------------------------------------------
 
-ListErr_t ListCheckPos(List_t* list, int pos)
+static ListErr_t ListCheckPos(List_t* list, int pos)
 {
     assert(list != NULL);
 
@@ -101,45 +106,10 @@ ListErr_t ListInsertAfter(List_t* list, int pos, elem_t value, int* insert_pos)
     DEBUG_LIST_CHECK(list, "START_INSERT_AFTER_", pos);
 
     ListErr_t error = LIST_SUCCESS;
-    if ((error = ListCheckPos(list, pos)) != LIST_SUCCESS)
+    if (ListInsert(list, pos, value, insert_pos, LIST_INSERT_AFTER))
     {
         return error;
     }
-
-    if (list->free == -1)
-    {
-        error = list->do_linear_realloc ? ListReallocLinear(list) : ListRealloc(list);
-        if (error != LIST_SUCCESS)
-        {
-            return error;
-        }
-    }
-
-    if (pos != list->data[0].prev)
-    {
-        list->is_sorted = 0;
-    }
-
-    int cur_index = list->free;
-    int pos_next  = list->data[pos].next;
-
-    /* set new free element */
-    list->free = list->data[list->free].next;
-
-    /* connect previous element to current */
-    list->data[pos].next        = cur_index;
-
-    /* connect current element to previous and next */
-    list->data[cur_index].prev  = pos;
-    list->data[cur_index].value = value;
-    list->data[cur_index].next  = pos_next;
-
-    /* connect next element to current */
-    list->data[pos_next].prev   = cur_index;
-
-    *insert_pos = cur_index;
-
-    list->size++;
 
     DEBUG_LIST_CHECK(list, "END_INSERT_AFTER_", pos);
 
@@ -157,6 +127,29 @@ ListErr_t ListInsertBefore(List_t* list, int pos, elem_t value, int* insert_pos)
     DPRINTF("> Start ListInsertBefore(pos = %d, value = " SPEC ")\n", pos, value);
 
     DEBUG_LIST_CHECK(list, "START_INSERT_BEFORE_", pos);
+
+    ListErr_t error = LIST_SUCCESS;
+    if (ListInsert(list, pos, value, insert_pos, LIST_INSERT_BEFORE))
+    {
+        return error;
+    }
+
+    DEBUG_LIST_CHECK(list, "END_INSERT_BEFORE_", pos);
+
+    LIST_CALL_DUMP(list, "insert", "DUMP_INSERT_BEFORE_", pos);
+
+    DPRINTF("> End   ListInsertBefore\n\n");
+
+    return LIST_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------
+
+static ListErr_t ListInsert(List_t* list, int pos, elem_t value,
+                            int* insert_pos, ListInsertType_t type)
+{
+    assert(list       != NULL);
+    assert(insert_pos != NULL);
 
     ListErr_t error = LIST_SUCCESS;
     if ((error = ListCheckPos(list, pos)) != LIST_SUCCESS)
@@ -179,31 +172,37 @@ ListErr_t ListInsertBefore(List_t* list, int pos, elem_t value, int* insert_pos)
     }
 
     int cur_index = list->free;
-    int pos_prev  = list->data[pos].prev;
+    int pos_prev = list->data[pos].prev;
+    int pos_next = list->data[pos].next;
 
     /* set new free element */
     list->free = list->data[list->free].next;
 
-    /* connect previous element to current */
-    list->data[pos_prev].next   = cur_index;
+    if (type == LIST_INSERT_BEFORE)
+    {
+        /* connect previous element to current */
+        list->data[pos_prev].next = cur_index;
+
+        /* connect next element to current */
+        list->data[pos].prev      = cur_index;
+    }
+    else
+    {
+        /* connect previous element to current */
+        list->data[pos].next      = cur_index;
+
+        /* connect next element to current */
+        list->data[pos_next].prev = cur_index;
+    }
 
     /* connect current element to previous and next */
-    list->data[cur_index].prev  = pos_prev;
+    list->data[cur_index].prev  = type == LIST_INSERT_BEFORE ? pos_prev : pos;
     list->data[cur_index].value = value;
-    list->data[cur_index].next  = pos;
-
-    /* connect next element to current */
-    list->data[pos].prev        = cur_index;
+    list->data[cur_index].next  = type == LIST_INSERT_AFTER  ? pos_next : pos;
 
     *insert_pos = cur_index;
 
     list->size++;
-
-    DEBUG_LIST_CHECK(list, "END_INSERT_BEFORE_", pos);
-
-    LIST_CALL_DUMP(list, "insert", "DUMP_INSERT_BEFORE_", pos);
-
-    DPRINTF("> End   ListInsertBefore\n\n");
 
     return LIST_SUCCESS;
 }

@@ -634,7 +634,6 @@ int ProcessUncrossedLimitsEdge(int     pos,
 
     if (list->data[next].prev == pos)
     {
-        DPRINTF("pos = %d; next = %d;\n", pos, next);
         // NOTE: next and prev with different arrow heads
         MakeDefaultEdge(pos, next, "#000064", NULL, "both", NULL, "normal", "normal", fp);
 

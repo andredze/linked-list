@@ -9,10 +9,17 @@
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
+typedef enum ListInsertType
+{
+    LIST_INSERT_AFTER,
+    LIST_INSERT_BEFORE
+} ListInsertType_t;
+
+//——————————————————————————————————————————————————————————————————————————————————————————
+
 ListErr_t ListCtor         (List_t* list, size_t capacity, int do_linear_realloc);
 ListErr_t ListDtor         (List_t* list);
 ListErr_t ListErase        (List_t* list, int  pos);
-ListErr_t ListCheckPos     (List_t* list, int  pos);
 ListErr_t ListInsertAfter  (List_t* list, int  pos, elem_t  value, int* insert_pos);
 ListErr_t ListInsertBefore (List_t* list, int  pos, elem_t  value, int* insert_pos);
 ListErr_t ListGetHead      (List_t* list,           int*    head);
