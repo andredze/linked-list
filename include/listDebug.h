@@ -172,6 +172,8 @@ ListErr_t ListCreateDumpGraph (List_t* list,
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
+int SetDirectories(char* log_filename, char* image_dir, char* dot_dir);
+
 int MakeListNodes(List_t* list, FILE* fp);
 
 int MakeListEdge(int pos, List_t* list, FILE* fp);

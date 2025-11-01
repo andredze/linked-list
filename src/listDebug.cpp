@@ -258,39 +258,17 @@ ListErr_t ListDump(List_t* list, ListDumpInfo_t* dump_info)
 {
     static int calls_count = 1;
 
-    char image_name[MAX_FILENAME_LEN] = {};
-    sprintf(image_name, "%04d_%s", calls_count, dump_info->image_name);
-
-    static char log_filename[MAX_FILENAME_LEN] = "";
-    static char image_dir   [MAX_FILENAME_LEN] = "";
-    static char dot_dir     [MAX_FILENAME_LEN] = "";
+    static char log_filename [MAX_FILENAME_LEN] = "";
+    static char image_dir    [MAX_FILENAME_LEN] = "";
+    static char dot_dir      [MAX_FILENAME_LEN] = "";
 
     if (calls_count == 1)
     {
-        time_t rawtime = time(NULL);
-
-        struct tm* info = localtime(&rawtime);
-
-        char time_dir[MAX_FILENAME_LEN] = "";
-        char dir[MAX_FILENAME_LEN] = "";
-
-        strftime(time_dir, sizeof(time_dir), "%d%m%y_%H%M%S", info);
-
-        sprintf(dir, "log/%s", time_dir);
-        mkdir(dir, 0777);
-
-        sprintf(image_dir, "log/%s/svg", time_dir);
-
-        DPRINTF("image_dir = %s;\n", image_dir);
-        mkdir(image_dir, 0777);
-
-        sprintf(dot_dir, "log/%s/dot", time_dir);
-
-        DPRINTF("dot_dir   = %s;\n", dot_dir);
-        mkdir(dot_dir, 0777);
-
-        sprintf(log_filename, "log/%s/list_log.html", time_dir);
+        SetDirectories(log_filename, image_dir, dot_dir);
     }
+
+    char image_name[MAX_FILENAME_LEN] = {};
+    sprintf(image_name, "%04d_%s", calls_count, dump_info->image_name);
 
     FILE* fp = fopen(log_filename, calls_count == 1 ? "w" : "a");
 
@@ -347,6 +325,41 @@ ListErr_t ListDump(List_t* list, ListDumpInfo_t* dump_info)
     fclose(fp);
 
     return LIST_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------
+
+int SetDirectories(char* log_filename, char* image_dir, char* dot_dir)
+{
+    assert(log_filename != NULL);
+    assert(image_dir    != NULL);
+    assert(dot_dir      != NULL);
+
+    time_t rawtime = time(NULL);
+
+    struct tm* info = localtime(&rawtime);
+
+    char time_dir[MAX_FILENAME_LEN / 2] = "";
+    char dir[MAX_FILENAME_LEN] = "";
+
+    strftime(time_dir, sizeof(time_dir), "%d%m%Y_%H%M%S", info);
+
+    snprintf(dir, 100, "log/%s", time_dir);
+    mkdir(dir, 0777);
+
+    sprintf(image_dir, "log/%s/svg", time_dir);
+
+    DPRINTF("image_dir = %s;\n", image_dir);
+    mkdir(image_dir, 0777);
+
+    sprintf(dot_dir, "log/%s/dot", time_dir);
+
+    DPRINTF("dot_dir   = %s;\n", dot_dir);
+    mkdir(dot_dir, 0777);
+
+    sprintf(log_filename, "log/%s/list_log.html", time_dir);
+
+    return 0;
 }
 
 //------------------------------------------------------------------------------------------
@@ -468,8 +481,6 @@ ListErr_t ListCreateDumpGraph(List_t* list,
         PRINTERR("Too big filename for graph image");
         return LIST_FILENAME_TOOBIG;
     }
-
-// NOTE: папка с именем в дату и время
 
     char filename[MAX_FILENAME_LEN] = {};
 
