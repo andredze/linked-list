@@ -163,12 +163,15 @@ ListErr_t ListVerifyNext      (List_t* list, size_t* next_count_ptr);
 ListErr_t ListVerifyPrev      (List_t* list, size_t* prev_count_ptr);
 ListErr_t ListVerifyFree      (List_t* list, size_t* free_count_ptr);
 ListErr_t ListDump            (List_t* list, ListDumpInfo_t* dump_info);
-ListErr_t ListDumpData        (List_t* list, ListDumpInfo_t* dump_info, FILE* fp);
+int       ListDumpStruct      (List_t* list, ListDumpInfo_t* dump_info, FILE* fp);
+int       ListDumpData        (List_t* list, ListDumpInfo_t* dump_info, FILE* fp);
 ListErr_t ListCreateDumpGraph (List_t* list, const char* image_name);
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
-int MakeListEdge       (int pos, List_t* list, FILE* fp);
+int MakeListNodes(List_t* list, FILE* fp);
+
+int MakeListEdge(int pos, List_t* list, FILE* fp);
 
 int ProcessFreeEdgeCase(
     int   pos,
@@ -220,6 +223,8 @@ int MakeDefaultEdge(
     const char* constraint,
     const char* dir,
     const char* style,
+    const char* arrowhead,
+    const char* arrowtail,
     FILE*       fp);
 
 int MakeWrongEdge(
@@ -234,6 +239,8 @@ int MakeEdge(
     const char* constraint,
     const char* dir,
     const char* style,
+    const char* arrowhead,
+    const char* arrowtail,
     FILE*       fp);
 
 //——————————————————————————————————————————————————————————————————————————————————————————
