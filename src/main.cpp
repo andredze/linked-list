@@ -52,10 +52,10 @@ int main()
     if (ListInsertAfter (&list, 1, 50, &insert_pos))
         break;
 
-    // list.data[3].prev = 84;
+    list.data[3].prev = 84;
     // list.size = 2;
     // list.data[6].next = 4;
-    list.data[6].prev = 4;
+    // list.data[6].prev = 4;
 
     // list.data[8].next = 7;
 

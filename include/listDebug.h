@@ -5,6 +5,8 @@
 
 #include "common.h"
 #include "listTypes.h"
+#include <time.h>
+#include <sys/stat.h>
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
@@ -18,7 +20,6 @@
                                     __FILE__, __LINE__, arg};                           \
         if (ListDump(list_ptr, &dump_info))                                             \
         {                                                                               \
-            ListDtor(list_ptr);                                                         \
             return LIST_DUMP_ERROR;                                                     \
         }                                                                               \
         END
@@ -165,7 +166,9 @@ ListErr_t ListVerifyFree      (List_t* list, size_t* free_count_ptr);
 ListErr_t ListDump            (List_t* list, ListDumpInfo_t* dump_info);
 int       ListDumpStruct      (List_t* list, ListDumpInfo_t* dump_info, FILE* fp);
 int       ListDumpData        (List_t* list, ListDumpInfo_t* dump_info, FILE* fp);
-ListErr_t ListCreateDumpGraph (List_t* list, const char* image_name);
+ListErr_t ListCreateDumpGraph (List_t* list,
+                               const char* image_name,
+                               const char* dot_dir);
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 

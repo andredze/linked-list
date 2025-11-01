@@ -1,2 +1,2 @@
 ./run ^
-./makesvg.sh
+./makesvg.sh 

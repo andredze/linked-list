@@ -28,14 +28,10 @@ SOURCES = src/main.cpp 		   \
 
 EXECUTABLE = run
 
-DOT = graphs/dot/*.dot
-
-LOG = *.htm
-
-SVG = graphs/svg/*.svg
+LOG_DIR = log/*
 
 all:
 	$(CXX) $(CXXFLAGS) $(SOURCES) -o $(EXECUTABLE)
 
 clean:
-	rm $(EXECUTABLE) $(DOT) $(SVG) $(LOG)
+	rm -rf $(EXECUTABLE) $(LOG_DIR)

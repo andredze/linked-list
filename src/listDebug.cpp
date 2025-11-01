@@ -261,11 +261,42 @@ ListErr_t ListDump(List_t* list, ListDumpInfo_t* dump_info)
     char image_name[MAX_FILENAME_LEN] = {};
     sprintf(image_name, "%04d_%s", calls_count, dump_info->image_name);
 
-    FILE* fp = fopen("list_log.htm", calls_count == 1 ? "w" : "a");
+    static char log_filename[MAX_FILENAME_LEN] = "";
+    static char image_dir   [MAX_FILENAME_LEN] = "";
+    static char dot_dir     [MAX_FILENAME_LEN] = "";
+
+    if (calls_count == 1)
+    {
+        time_t rawtime = time(NULL);
+
+        struct tm* info = localtime(&rawtime);
+
+        char time_dir[MAX_FILENAME_LEN] = "";
+        char dir[MAX_FILENAME_LEN] = "";
+
+        strftime(time_dir, sizeof(time_dir), "%d%m%y_%H%M%S", info);
+
+        sprintf(dir, "log/%s", time_dir);
+        mkdir(dir, 0777);
+
+        sprintf(image_dir, "log/%s/svg", time_dir);
+
+        DPRINTF("image_dir = %s;\n", image_dir);
+        mkdir(image_dir, 0777);
+
+        sprintf(dot_dir, "log/%s/dot", time_dir);
+
+        DPRINTF("dot_dir   = %s;\n", dot_dir);
+        mkdir(dot_dir, 0777);
+
+        sprintf(log_filename, "log/%s/list_log.html", time_dir);
+    }
+
+    FILE* fp = fopen(log_filename, calls_count == 1 ? "w" : "a");
 
     if (fp == NULL)
     {
-        PRINTERR("Opening logfile failed");
+        PRINTERR("Opening logfile %s failed", log_filename);
         return LIST_LOGFILE_OPEN_ERROR;
     }
 
@@ -302,13 +333,13 @@ ListErr_t ListDump(List_t* list, ListDumpInfo_t* dump_info)
     }
 
     ListErr_t graph_error = LIST_SUCCESS;
-    if ((graph_error = ListCreateDumpGraph(list, image_name)))
+    if ((graph_error = ListCreateDumpGraph(list, image_name, dot_dir)))
     {
         fclose(fp);
         return graph_error;
     }
 
-    fprintf(fp, "\n<img src = graphs/svg/%s.svg width = 100%%>\n\n"
+    fprintf(fp, "\n<img src = svg/%s.svg width = 100%%>\n\n"
                 "============================================================="
                 "=============================================================\n\n",
                 image_name);
@@ -348,7 +379,7 @@ int ListDumpStruct(List_t* list, ListDumpInfo_t* dump_info, FILE* fp)
 
     if (dump_info->error == LIST_DATA_NULL)
     {
-        return LIST_SUCCESS;
+        return 0;
     }
 
     fprintf(fp, "head = %d;\n"
@@ -421,7 +452,9 @@ int ListDumpData(List_t* list, ListDumpInfo_t* dump_info, FILE* fp)
 
 //------------------------------------------------------------------------------------------
 
-ListErr_t ListCreateDumpGraph(List_t* list, const char* image_name)
+ListErr_t ListCreateDumpGraph(List_t* list,
+                              const char* image_name,
+                              const char* dot_dir)
 {
     assert(list != NULL);
 
@@ -439,13 +472,15 @@ ListErr_t ListCreateDumpGraph(List_t* list, const char* image_name)
 // NOTE: папка с именем в дату и время
 
     char filename[MAX_FILENAME_LEN] = {};
-    sprintf(filename, "graphs/dot/%s.dot", image_name);
+
+    sprintf(filename, "%s/%s.dot", dot_dir, image_name);
 
     FILE* fp = fopen(filename, "w");
 
     if (fp == NULL)
     {
         PRINTERR("Opening graph logfile failed");
+        // fix double free here
         return LIST_LOGFILE_OPEN_ERROR;
     }
 

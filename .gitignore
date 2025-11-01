@@ -1,5 +1,6 @@
 # Log files
 *.htm
+*.html
 *.png
 *.txt
 *.dot
