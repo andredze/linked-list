@@ -401,6 +401,31 @@ ListErr_t ListGetTail(List_t* list, int* tail)
 
 //------------------------------------------------------------------------------------------
 
+ListErr_t ListGetValue(List_t* list, int pos, elem_t* value)
+{
+    DPRINTF("> Start ListGetValue()\n");
+
+    DEBUG_LIST_CHECK(list, "START_GET_VALUE_", pos);
+
+    ListErr_t error = LIST_SUCCESS;
+    if ((error = ListCheckPos(list, pos)) != LIST_SUCCESS)
+    {
+        return error;
+    }
+
+    *value = list->data[pos].value;
+
+    DEBUG_LIST_CHECK(list, "END_GET_VALUE_IND=", pos);
+
+    LIST_CALL_DUMP(list, "get_value", "END_GET_VALUE_IND=", pos);
+
+    DPRINTF("> End   ListGetValue\n");
+
+    return LIST_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------
+
 ListErr_t ListDtor(List_t* list)
 {
     DPRINTF("> Start ListDtor()\n");
