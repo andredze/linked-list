@@ -4,6 +4,7 @@
 *.txt
 *.dot
 *.svg
+run
 
 # Prerequisites
 *.d

@@ -262,60 +262,60 @@ ListErr_t ListDump(List_t* list, ListDumpInfo_t* dump_info)
     char image_name[MAX_FILENAME_LEN] = {};
     sprintf(image_name, "%04d_%s", calls_count, dump_info->image_name);
 
-    FILE* log_stream = NULL;
+    FILE* fp = fopen("list_log.htm", calls_count == 1 ? "w" : "a");
 
-    log_stream = fopen("list_log.htm", calls_count == 1 ? "w" : "a");
-
-    calls_count += 1;
-
-    if (log_stream == NULL)
+    if (fp == NULL)
     {
         PRINTERR("Opening logfile failed");
         return LIST_LOGFILE_OPEN_ERROR;
     }
 
-    fprintf(log_stream, "<pre>\n<h3><font color=blue>%s%d</font></h3>",
+    calls_count++;
+
+    fprintf(fp, "<pre>\n<h3><font color=blue>%s%d</font></h3>",
             dump_info->reason, dump_info->command_arg);
 
-    if (dump_info->error == LIST_SUCCESS)
-    {
-        fprintf(log_stream, "<font color=green><b>%s (code %d)</b></font>\n",
-                LIST_STR_ERRORS[dump_info->error], dump_info->error);
-    }
-    else
-    {
-        fprintf(log_stream, "<font color=red><b>ERROR: %s (code %d)</b></font>\n",
-                LIST_STR_ERRORS[dump_info->error], dump_info->error);
-    }
+    fprintf(fp, dump_info->error == LIST_SUCCESS ? "<font color=green><b>" : "<font color=red><b>ERROR: ");
 
-    fprintf(log_stream, "LIST DUMP called from %s at %s:%d\n\nlist [%p]:\n\n",
+    fprintf(fp, "%s (code %d)</b></font>\n",
+                        LIST_STR_ERRORS[dump_info->error],
+                        dump_info->error);
+
+    fprintf(fp, "LIST DUMP called from %s at %s:%d\n\nlist [%p]:\n\n",
             dump_info->func, dump_info->file, dump_info->line, list);
 
     if (dump_info->error == LIST_CTX_NULL)
     {
-        fclose(log_stream);
+        fclose(fp);
         return LIST_SUCCESS;
     }
 
-    fprintf(log_stream,
-            "data     = %p;\n"
-            "capacity = %zu;\n"
-            "size     = %zu;\n"
-            "free     = %d;\n",
-            list->data,
+    fprintf(fp,
+            "do_linear_realloc = %d;\n"
+            "is_sorted = %d;\n"
+            "capacity  = %zu;\n"
+            "size = %zu;\n"
+            "free = %d;\n\n",
+            list->do_linear_realloc,
+            list->is_sorted,
             list->capacity,
             list->size,
             list->free);
 
     if (dump_info->error == LIST_DATA_NULL)
     {
-        fclose(log_stream);
+        fclose(fp);
         return LIST_SUCCESS;
     }
 
-    fprintf(log_stream,
-            "head     = %d;\n"
-            "tail     = %d;\n",
+    if (ListDumpData(list, dump_info, fp))
+    {
+        return LIST_DUMP_ERROR;
+    }
+
+    fprintf(fp,
+            "head = %d;\n"
+            "tail = %d;\n",
             list->data[0].next,
             list->data[0].prev);
 
@@ -323,20 +323,75 @@ ListErr_t ListDump(List_t* list, ListDumpInfo_t* dump_info)
         dump_info->error == LIST_HEAD_TOOBIG          ||
         dump_info->error == LIST_CAPACITY_EXCEEDS_MAX)
     {
-        fclose(log_stream);
+        fclose(fp);
         return LIST_SUCCESS;
     }
 
     ListErr_t graph_error = LIST_SUCCESS;
     if ((graph_error = ListCreateDumpGraph(list, image_name)))
     {
-        fclose(log_stream);
+        fclose(fp);
         return graph_error;
     }
 
-    fprintf(log_stream, "\n<img src = graphs/svg/%s.svg width = 100%%>\n\n", image_name);
+    fprintf(fp, "\n<img src = graphs/svg/%s.svg width = 100%%>\n\n", image_name);
 
-    fclose(log_stream);
+    fclose(fp);
+
+    return LIST_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------
+
+ListErr_t ListDumpData(List_t* list, ListDumpInfo_t* dump_info, FILE* fp)
+{
+    assert(list      != NULL);
+    assert(dump_info != NULL);
+    assert(fp        != NULL);
+
+    fprintf(fp, "data [%p]:\n[\n", list->data);
+
+    if (dump_info->error == LIST_CAPACITY_EXCEEDS_MAX)
+    {
+        return LIST_SUCCESS;
+    }
+
+    fprintf(fp, "\tindex  ");
+
+    for (size_t i = 0; i < list->capacity; i++)
+    {
+        fprintf(fp, "%4zu ", i);
+    }
+
+    fprintf(fp, "\n\tvalue [");
+
+    for (size_t i = 0; i < list->capacity; i++)
+    {
+        if (list->data[i].value == LIST_POISON)
+        {
+            fprintf(fp, " PZN ");
+        }
+        else
+        {
+            fprintf(fp, "%4d ", list->data[i].value);
+        }
+    }
+
+    fprintf(fp, "];\n\tnext  [");
+
+    for (size_t i = 0; i < list->capacity; i++)
+    {
+        fprintf(fp, "%4d ", list->data[i].next);
+    }
+
+    fprintf(fp, "];\n\tprev  [");
+
+    for (size_t i = 0; i < list->capacity; i++)
+    {
+        fprintf(fp, "%4d ", list->data[i].prev);
+    }
+
+    fprintf(fp, "];\n];\n");
 
     return LIST_SUCCESS;
 }
@@ -358,8 +413,6 @@ ListErr_t ListCreateDumpGraph(List_t* list, const char* image_name)
         return LIST_FILENAME_TOOBIG;
     }
 
-// TODO: папка с названием в дату и время - log.html и svg/ dot/
-
     char filename[MAX_FILENAME_LEN] = {};
     sprintf(filename, "graphs/dot/%s.dot", image_name);
 
@@ -371,43 +424,28 @@ ListErr_t ListCreateDumpGraph(List_t* list, const char* image_name)
         return LIST_LOGFILE_OPEN_ERROR;
     }
 
-    fprintf(fp,
-            "digraph GG\n"
-            "{\n"
-	        "\tgraph [splines=ortho];\n"
-            "\tranksep=0.75;\n"
-            "\tnodesep=0.5;\n"
-	        "\tnode [fontname=\"Arial\", "
-            "shape=\"Mrecord\", "
-            "style=\"filled\", "
-            "color = \"#3E3A22\", "
-            "fillcolor=\"#E3DFC9\", "
-            "fontcolor = \"#3E3A22\"];\n"
-            "\tedge [constraint=false];\n\t");
+    fprintf(fp, R"(digraph GG {
+    graph [splines=ortho];
+    ranksep=0.75;
+    nodesep=0.5;
+    node [
+        fontname  = "Arial",
+        shape     = "Mrecord",
+        style     = "filled",
+        color     = "#3E3A22",
+        fillcolor = "#E3DFC9",
+        fontcolor = "#3E3A22"
+    ];
+    edge [constraint=false];
+    )");
 
     /* Create invisible edges for all nodes */
-    for (size_t i = 0; i < list->capacity - 1; i++)
+    for (int i = 0; i < (int) list->capacity - 1; i++)
     {
-        fprintf(fp, "node%zu->", i);
-    }
-    if (list->capacity >= 1)
-    {
-        fprintf(fp, "node%zu [style=\"invis\"];\n", list->capacity - 1);
+        MakeDefaultEdge(i, i + 1, NULL, NULL, NULL, "invis", fp);
     }
 
-    /* add null node */
-
-    fprintf(fp, "\tnode0[color = \"#3E3A22\", fillcolor = \"#ecede8\", fontcolor = \"#3E3A22\", "
-            "label=\"{ idx = 0 | value = ");
-    if (list->data[0].value == LIST_POISON)
-    {
-        fprintf(fp, "PZN");
-    }
-    else
-    {
-        fprintf(fp, SPEC, list->data[0].value);
-    }
-    fprintf(fp, " | { prev = %d | next = %d }}\"];\n", list->data[0].prev, list->data[0].next);
+    MakeDefaultNode(0, "#3E3A22", "#ecede8", "#3E3A22", "record", list, fp);
 
     /* make list nodes */
     for (int i = 1; (size_t) i < list->capacity; i++)
@@ -415,36 +453,16 @@ ListErr_t ListCreateDumpGraph(List_t* list, const char* image_name)
         /* if free */
         if (list->data[i].prev == -1)
         {
-            fprintf(fp, "\tnode%d [fillcolor=\"#C0FFC0\", color=\"#006400\", fontcolor = \"#005300\", label=\"{ idx = %d | value = ", i, i);
-            if (list->data[i].value == LIST_POISON)
-            {
-                fprintf(fp, "PZN");
-            }
-            else
-            {
-                fprintf(fp, SPEC, list->data[i].value);
-            }
-            fprintf(fp, " | { prev = %d | next = %d }}\"];\n", list->data[i].prev, list->data[i].next);
-
-            continue;
-        }
-        /* else */
-        fprintf(fp, "\tnode%d[label=\"{ idx = %d | value = ", i, i);
-        if (list->data[i].value == LIST_POISON)
-        {
-            fprintf(fp, "PZN");
+            MakeDefaultNode(i, "#006400", "#C0FFC0", "#005300", NULL, list, fp);
         }
         else
         {
-            fprintf(fp, SPEC, list->data[i].value);
+            MakeDefaultNode(i, NULL, NULL, NULL, NULL, list, fp);
         }
-        fprintf(fp, " | { prev = %d | next = %d }}\"];\n",
-                list->data[i].prev,
-                list->data[i].next);
     }
 
     /* make all edges */
-    for (size_t pos = 1; pos < list->capacity; pos++)
+    for (int pos = 1; pos < (int) list->capacity; pos++)
     {
         int next = list->data[pos].next;
         int prev = list->data[pos].prev;
@@ -469,13 +487,13 @@ ListErr_t ListCreateDumpGraph(List_t* list, const char* image_name)
         {
             if (next_wrong)
             {
-                fprintf(fp, "\twrong_next%zu[shape = \"octagon\", color = \"#640000\", fillcolor = \"#FFC0C0\", fontcolor = \"#640000\", label=\"idx = %d\"];\n", pos, next);
-                fprintf(fp, "\tnode%zu->wrong_next%zu [color = \"#640000\", constraint=true];\n", pos, pos);
+                MakeWrongNode(pos, next, "next", fp);
+                MakeWrongEdge(pos,       "next", fp);
                 continue;
             }
             else
             {
-                fprintf(fp, "\tnode%zu->node%d [color = \"#006400\", style=dashed];\n", pos, next);
+                MakeDefaultEdge(pos, next, "#006400", NULL, NULL, "dashed", fp);
                 continue;
             }
 
@@ -486,9 +504,12 @@ ListErr_t ListCreateDumpGraph(List_t* list, const char* image_name)
         {
             if (list->data[list->data[prev].next].prev != prev)
             {
-                fprintf(fp, "\tnode%d [fillcolor = \"#FFC0C0\"];\n", prev);
+                char node[MAX_NODE_NAME_LEN] = "";
+                sprintf(node, "node%d", prev);
+
+                MakeNode(node, NULL, "#FFC0C0", NULL, NULL, NULL, fp);
             }
-            fprintf(fp, "\tnode%zu->node%d [color = \"#640000\", style=\"dashed\"];\n", pos, prev);
+            MakeDefaultEdge(pos, prev, "#640000", NULL, NULL, "dashed", fp);
         }
 
         if (!(next_wrong) && !(prev_wrong))
@@ -497,74 +518,46 @@ ListErr_t ListCreateDumpGraph(List_t* list, const char* image_name)
             {
                 continue;
             }
-            if (list->data[next].prev != (int) pos)
+            if (list->data[next].prev != pos)
             {
                 DPRINTF("next.prev = %d\n", list->data[next].prev);
 
                 if (list->data[next].prev < (int) list->capacity && list->data[list->data[next].prev].next != next)
                 {
-                    fprintf(fp, "\tnode%d [fillcolor = \"#FFC0C0\"];\n", next);
+                    char node[MAX_NODE_NAME_LEN] = "";
+                    sprintf(node, "node%d", next);
+
+                    MakeNode(node, NULL, "#FFC0C0", NULL, NULL, NULL, fp);
                 }
 
-                fprintf(fp, "\tnode%zu->node%d [color = \"#640000\", style=\"dashed\"];\n", pos, next);
+                MakeDefaultEdge(pos, next, "#640000", NULL, NULL, "dashed", fp);
                 continue;
             }
-            fprintf(fp, "\tnode%zu->node%d [color = \"#000064\", dir=both];\n", pos, next);
+            MakeDefaultEdge(pos, next, "#000064", NULL, "both", NULL, fp);
             continue;
         }
         if (next_wrong)
         {
-            fprintf(fp, "\twrong_next%zu[shape = \"octagon\", color = \"#640000\", fillcolor = \"#FFC0C0\", fontcolor = \"#640000\", label=\"idx = %d\"];\n", pos, next);
-            fprintf(fp, "\tnode%zu->wrong_next%zu [color = \"#640000\", constraint=true];\n", pos, pos);
+            MakeWrongNode(pos, next, "next", fp);
+            MakeWrongEdge(pos,       "next", fp);
         }
         else
         {
             if (next != 0)
             {
-                fprintf(fp, "\tnode%zu->node%d [color = \"#000064\"];\n", pos, next);
+                MakeDefaultEdge(pos, next, "#000064", NULL, NULL, NULL, fp);
             }
         }
         if (prev_wrong)
         {
-            // MakeNode()
-            fprintf(fp, "\twrong_prev%zu[shape = \"octagon\", color = \"#640000\", fillcolor = \"#FFC0C0\", fontcolor = \"#640000\", label=\"idx = %d\"];\n", pos, prev);
-            fprintf(fp, "\tnode%zu->wrong_prev%zu [color = \"#640000\", constraint=true];\n", pos, pos);
+            MakeWrongNode(pos, prev, "prev", fp);
+            MakeWrongEdge(pos,       "prev", fp);
         }
-        // else
-        // {
-        //     if (prev != 0)
-        //     {
-        //         fprintf(fp, "\tnode%zu->node%d [color = \"#000064\"];\n", pos, prev);
-        //     }
-        // }
     }
 
-    /* make head, tail, free nodes */
-    fprintf(fp, "\tnode [shape=\"box\", "
-                "color=\"#70421A\", "
-                "fontcolor=\"#70421A\", "
-                "fillcolor=\"#DEB887\"];\n"
-                "\ttail; head; free;\n"
-                "\tedge["
-                "color=\"#70421A\", "
-                "arrowhead=none]\n"
-                "\tedge [constraint=true];\n");
+    MakeHeadTailFree(list, fp);
 
-    /* make head, tail and free edges to the elements */
-    if (list->data[0].prev >= 0)
-    {
-        fprintf(fp, "\ttail->node%d;\n", list->data[0].prev);
-    }
-    if (list->data[0].next >= 0)
-    {
-        fprintf(fp, "\thead->node%d;\n", list->data[0].next);
-    }
-    if (list->free >= 0)
-    {
-        fprintf(fp, "\tfree->node%d;\n", list->free);
-    }
-    fprintf(fp, "\t{ rank=same; tail; head; free; }\n"
-                "\t{ rank=same; ");
+    fprintf(fp, "\t{ rank=same; ");
 
     /* place all nodes in one rank */
     for (size_t ind = 0; ind < list->capacity; ind++)
@@ -579,7 +572,49 @@ ListErr_t ListCreateDumpGraph(List_t* list, const char* image_name)
     return LIST_SUCCESS;
 }
 
-int MakeNode(const char* node_name,
+//------------------------------------------------------------------------------------------
+
+int MakeDefaultNode(int index,
+                    const char* color,
+                    const char* fillcolor,
+                    const char* fontcolor,
+                    const char* shape,
+                    List_t* list,
+                    FILE* fp)
+{
+    assert(fp        != NULL);
+    assert(list      != NULL);
+
+    char name[MAX_NODE_NAME_LEN] = "";
+
+    sprintf(name, "node%d", index);
+
+    char label[MAX_LABEL_LEN] = "";
+    int  current_pos = 0;
+
+    current_pos += sprintf(label, "{ idx = %d | value = ", index);
+
+    if (list->data[index].value == LIST_POISON)
+    {
+        current_pos += sprintf(current_pos + label, "PZN");
+    }
+    else
+    {
+        current_pos += sprintf(current_pos + label, SPEC, index);
+    }
+
+    sprintf(current_pos + label, " | { prev = %d | next = %d }}",
+                                 list->data[index].prev,
+                                 list->data[index].next);
+
+    MakeNode(name, label, color, fillcolor, fontcolor, shape, fp);
+
+    return 0;
+}
+
+//------------------------------------------------------------------------------------------
+
+int MakeNode(const char* name,
              const char* label,
              const char* color,
              const char* fillcolor,
@@ -587,26 +622,197 @@ int MakeNode(const char* node_name,
              const char* shape,
              FILE* fp)
 {
-    assert(node_name != NULL);
-    assert(label     != NULL);
-    assert(color     != NULL);
-    assert(fillcolor != NULL);
-    assert(shape     != NULL);
-    assert(fp        != NULL);
+    assert(name != NULL);
+    assert(fp   != NULL);
+
+    fprintf(fp, "\t%s", name);
+
+    int is_first_arg = 1;
+
+    PrintArg("label",     label,     &is_first_arg, fp);
+    PrintArg("color",     color,     &is_first_arg, fp);
+    PrintArg("fillcolor", fillcolor, &is_first_arg, fp);
+    PrintArg("fontcolor", fontcolor, &is_first_arg, fp);
+    PrintArg("shape",     shape,     &is_first_arg, fp);
+
+    if (is_first_arg == 0)
+    {
+        fprintf(fp, "]");
+    }
+
+    fprintf(fp, ";\n");
+
+    return 0;
+}
+
+//------------------------------------------------------------------------------------------
+
+int MakeWrongNode(int         pos,
+                  int         value,
+                  const char* connection,
+                  FILE*       fp)
+{
+    assert(connection != NULL);
+    assert(fp         != NULL);
+
+    char name [MAX_NODE_NAME_LEN] = "";
+    char label[MAX_LABEL_LEN]     = "";
+
+    sprintf(name, "wrong_%s_%d", connection, pos);
+    sprintf(name, "idx = %d",    value);
+
+    MakeNode(name, label, "#640000", "#FFC0C0", "#640000", "octagon", fp);
+
+    return 0;
+}
+
+//------------------------------------------------------------------------------------------
+
+int MakeDefaultEdge(int index1,
+                    int index2,
+                    const char* color,
+                    const char* constraint,
+                    const char* dir,
+                    const char* style,
+                    FILE* fp)
+{
+    assert(fp != NULL);
+
+    char node1[MAX_NODE_NAME_LEN] = "";
+    char node2[MAX_NODE_NAME_LEN] = "";
+
+    sprintf (node1, "node%d", index1);
+    sprintf (node2, "node%d", index2);
+
+    MakeEdge(node1, node2, color, constraint, dir, style, fp);
+
+    return 0;
+}
+
+//------------------------------------------------------------------------------------------
+
+int MakeWrongEdge(int pos,
+                  const char* connection,
+                  FILE* fp)
+{
+    assert(connection != NULL);
+    assert(fp         != NULL);
+
+    char node1[MAX_NODE_NAME_LEN] = "";
+    char node2[MAX_NODE_NAME_LEN] = "";
+
+    sprintf(node1, "node%d",                  pos);
+    sprintf(node2, "wrong_%s_%d", connection, pos);
+
+    MakeEdge(node1, node2, "#640000", "true", NULL, NULL, fp);
+
+    return 0;
+}
+
+//------------------------------------------------------------------------------------------
+
+int MakeEdge(const char* node1,
+             const char* node2,
+             const char* color,
+             const char* constraint,
+             const char* dir,
+             const char* style,
+             FILE* fp)
+{
+    assert(node1 != NULL);
+    assert(node2 != NULL);
+
+    fprintf(fp, "\t%s->%s", node1, node2);
+
+    int is_first_arg = 1;
+
+    PrintArg("color",      color,      &is_first_arg, fp);
+    PrintArg("constraint", constraint, &is_first_arg, fp);
+    PrintArg("dir",        dir,        &is_first_arg, fp);
+    PrintArg("style",      style,      &is_first_arg, fp);
+
+    if (is_first_arg == 0)
+    {
+        fprintf(fp, "]");
+    }
+
+    fprintf(fp, ";\n");
+
+    return 0;
+}
+
+//------------------------------------------------------------------------------------------
+
+int PrintArg(const char* arg_name,
+             const char* arg_value,
+             int*        is_first_arg,
+             FILE*       fp)
+{
+    assert(arg_name     != NULL);
+    assert(is_first_arg != NULL);
+
+    if (arg_value != NULL)
+    {
+        if (*is_first_arg)
+        {
+            fprintf(fp, " [");
+            *is_first_arg = 0;
+        }
+        else
+        {
+            fprintf(fp, ", ");
+        }
+
+        fprintf(fp, "%s = \"%s\"", arg_name, arg_value);
+    }
+
+    return 0;
+}
+
+//------------------------------------------------------------------------------------------
+
+int MakeHeadTailFree(List_t* list, FILE* fp)
+{
+    assert(list != NULL);
+    assert(fp   != NULL);
 
     fprintf(fp,
-            "\t%s["
-            "label = \"%s\", "
-            "color = \"%s\", "
-            "fillcolor = \"%s\", "
-            "fontcolor = \"%s\", "
-            "shape = \"%s\"];\n",
-            node_name,
-            label,
-            color,
-            fillcolor,
-            fontcolor,
-            shape);
+    R"(    node [
+        shape = "box",
+        color = "#70421A",
+        fontcolor = "#70421A",
+        fillcolor = "#DEB887"
+    ];
+    edge [
+        color = "#70421A",
+        arrowhead=none,
+        constraint=true
+    ];
+    tail; head; free;
+    )");
+
+    /* Make edges to the elements */
+    if (list->data[0].prev >= 0)
+    {
+        char name[MAX_NODE_NAME_LEN] = "";
+        sprintf (name, "node%d", list->data[0].prev);
+        MakeEdge("tail", name, NULL, NULL, NULL, NULL, fp);
+    }
+    if (list->data[0].next >= 0)
+    {
+        char name[MAX_NODE_NAME_LEN] = "";
+        sprintf (name, "node%d", list->data[0].next);
+        MakeEdge("head", name, NULL, NULL, NULL, NULL, fp);
+    }
+    if (list->free >= 0)
+    {
+        char name[MAX_NODE_NAME_LEN] = "";
+        sprintf (name, "node%d", list->free);
+        MakeEdge("free", name, NULL, NULL, NULL, NULL, fp);
+    }
+
+    /* Place on one rank */
+    fprintf(fp, "\t{ rank=same; tail; head; free; }\n");
 
     return 0;
 }

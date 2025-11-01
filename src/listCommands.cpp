@@ -48,7 +48,7 @@ ListErr_t ListCtor(List_t* list, size_t capacity, int do_linear_realloc)
     list->data[0].value = LIST_POISON;
 
     /* Filling the free list */
-    for (int i = 1; i < (int) capacity - 1; i++)
+    for (int i = 1; i < (int) capacity; i++)
     {
         list->data[i].prev  = -1;
         list->data[i].value = LIST_POISON;
@@ -56,9 +56,7 @@ ListErr_t ListCtor(List_t* list, size_t capacity, int do_linear_realloc)
     }
 
     /* Last free element addresses to null */
-    list->data[capacity - 1].prev  = -1;
-    list->data[capacity - 1].value = LIST_POISON;
-    list->data[capacity - 1].next  = -1;
+    list->data[capacity - 1].next = -1;
 
     LIST_CALL_DUMP(list, "ctor", "DUMP_CTOR_CAP=", (int) capacity);
 
@@ -84,6 +82,13 @@ ListErr_t ListCheckPos(List_t* list, int pos)
         return LIST_POSITION_TOO_BIG;
     }
 
+    /* Check that pos is in list */
+    if (list->data[pos].prev == -1)
+    {
+        PRINTERR("List doesn't have an element with pos = %d", pos);
+        return LIST_NO_SUCH_ELEMENT;
+    }
+
     return LIST_SUCCESS;
 }
 
@@ -99,13 +104,6 @@ ListErr_t ListInsertAfter(List_t* list, int pos, elem_t value, int* insert_pos)
     if ((error = ListCheckPos(list, pos)) != LIST_SUCCESS)
     {
         return error;
-    }
-
-    /* Check that pos is in list */
-    if (list->data[pos].prev == -1)
-    {
-        PRINTERR("List doesn't have an element with pos = %d", pos);
-        return LIST_NO_SUCH_ELEMENT;
     }
 
     if (list->free == -1)
@@ -141,7 +139,7 @@ ListErr_t ListInsertAfter(List_t* list, int pos, elem_t value, int* insert_pos)
 
     *insert_pos = cur_index;
 
-    list->size += 1;
+    list->size++;
 
     DEBUG_LIST_CHECK(list, "END_INSERT_AFTER_", pos);
 
@@ -164,13 +162,6 @@ ListErr_t ListInsertBefore(List_t* list, int pos, elem_t value, int* insert_pos)
     if ((error = ListCheckPos(list, pos)) != LIST_SUCCESS)
     {
         return error;
-    }
-
-    /* Check that pos is in list */
-    if (list->data[pos].prev == -1)
-    {
-        PRINTERR("List doesn't have an element with pos = %d", pos);
-        return LIST_NO_SUCH_ELEMENT;
     }
 
     if (list->free == -1)
@@ -206,7 +197,7 @@ ListErr_t ListInsertBefore(List_t* list, int pos, elem_t value, int* insert_pos)
 
     *insert_pos = cur_index;
 
-    list->size += 1;
+    list->size++;
 
     DEBUG_LIST_CHECK(list, "END_INSERT_BEFORE_", pos);
 
@@ -345,21 +336,21 @@ ListErr_t ListErase(List_t* list, int pos)
 
     list->free = pos;
 
-    DPRINTF(R"(\tprev_ind = %d;\n
-            \tnext_ind = %d;\n
-            \thead     = %d;\n
-            \ttail     = %d;\n
-            \tpos      = %d;\n)",
-            prev_ind,
-            next_ind,
-            list->data[0].next,
-            list->data[0].prev,
-            pos);
+    DPRINTF(R"(    prev_ind = %d;
+    next_ind = %d;
+    head     = %d;
+    tail     = %d;
+    pos      = %d;)",
+    prev_ind,
+    next_ind,
+    list->data[0].next,
+    list->data[0].prev,
+    pos);
 
     list->data[prev_ind].next = next_ind;
     list->data[next_ind].prev = prev_ind;
 
-    list->size -= 1;
+    list->size--;
 
     DEBUG_LIST_CHECK(list, "END_ERASE_", pos);
 

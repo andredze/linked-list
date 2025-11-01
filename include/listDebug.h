@@ -163,15 +163,76 @@ ListErr_t ListVerifyNext      (List_t* list, size_t* next_count_ptr);
 ListErr_t ListVerifyPrev      (List_t* list, size_t* prev_count_ptr);
 ListErr_t ListVerifyFree      (List_t* list, size_t* free_count_ptr);
 ListErr_t ListDump            (List_t* list, ListDumpInfo_t* dump_info);
+ListErr_t ListDumpData        (List_t* list, ListDumpInfo_t* dump_info, FILE* fp);
 ListErr_t ListCreateDumpGraph (List_t* list, const char* image_name);
 
-int MakeNode(const char* node_name,
-             const char* label,
-             const char* color,
-             const char* fillcolor,
-             const char* fontcolor,
-             const char* shape,
-             FILE* fp);
+//——————————————————————————————————————————————————————————————————————————————————————————
+
+int MakeNode(
+    const char* name,
+    const char* label,
+    const char* color,
+    const char* fillcolor,
+    const char* fontcolor,
+    const char* shape,
+    FILE*       fp);
+
+int MakeDefaultNode(
+    int         index,
+    const char* color,
+    const char* fillcolor,
+    const char* fontcolor,
+    const char* shape,
+    List_t*     list,
+    FILE*       fp);
+
+int MakeWrongNode(
+    int         pos,
+    int         value,
+    const char* connection,
+    FILE*       fp);
+
+//——————————————————————————————————————————————————————————————————————————————————————————
+
+int MakeDefaultEdge(
+    int         index1,
+    int         index2,
+    const char* color,
+    const char* constraint,
+    const char* dir,
+    const char* style,
+    FILE*       fp);
+
+int MakeWrongEdge(
+    int         pos,
+    const char* connection,
+    FILE*       fp);
+
+int MakeEdge(
+    const char* node1,
+    const char* node2,
+    const char* color,
+    const char* constraint,
+    const char* dir,
+    const char* style,
+    FILE*       fp);
+
+//——————————————————————————————————————————————————————————————————————————————————————————
+
+int PrintArg(
+    const char* arg_name,
+    const char* arg_value,
+    int*        is_first_arg,
+    FILE*       fp);
+
+int MakeHeadTailFree(
+    List_t*     list,
+    FILE*       fp);
+
+//——————————————————————————————————————————————————————————————————————————————————————————
+
+const int MAX_NODE_NAME_LEN = 32;
+const int MAX_LABEL_LEN     = 256;
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
