@@ -24,7 +24,8 @@ endif
 
 SOURCES = src/main.cpp 		   \
 		  src/listCommands.cpp \
-		  src/listDebug.cpp
+		  src/listDebug.cpp	   \
+		  src/listGraph.cpp
 
 EXECUTABLE = run
 

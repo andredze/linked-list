@@ -5,6 +5,7 @@
 
 #include "common.h"
 #include "listTypes.h"
+#include "listGraph.h"
 #include <time.h>
 #include <sys/stat.h>
 
@@ -24,21 +25,17 @@
         }                                                                               \
         END
 
-#define DEBUG_LIST_CHECK(list, reason, arg)                                             \
-        BEGIN                                                                           \
-        ListErr_t verify_status = LIST_SUCCESS;                                         \
-        if ((verify_status = ListVerify(list)))                                         \
-        {                                                                               \
-            PRINTERR("%s (ListVerify not passed! Check \"list_log.htm\")",              \
-                     LIST_STR_ERRORS[verify_status]);                                   \
-            ListDumpInfo_t dump_info = {verify_status, "err_dump", reason,              \
-                                        __PRETTY_FUNCTION__, __FILE__, __LINE__, arg};  \
-            if (ListDump(list, &dump_info))                                             \
-            {                                                                           \
-                return LIST_DUMP_ERROR;                                                 \
-            }                                                                           \
-            return verify_status;                                                       \
-        }                                                                               \
+#define DEBUG_LIST_CHECK(list, message, arg)            \
+        BEGIN                                           \
+        ListErr_t ret = LIST_SUCCESS;                   \
+        if ((ret = ListCheck(list, message,             \
+                             __PRETTY_FUNCTION__,       \
+                             __FILE__,                  \
+                             __LINE__,                  \
+                             arg)) != LIST_SUCCESS)     \
+        {                                               \
+            return ret;                                 \
+        }                                               \
         END
 
 //==========================================================================================
@@ -46,7 +43,7 @@
 #else
 
 #define LIST_CALL_DUMP(list_ptr, name, message, arg)    ;
-#define DEBUG_LIST_CHECK(list, reason, arg)             ;
+#define DEBUG_LIST_CHECK(list, message, arg)            ;
 
 //==========================================================================================
 
@@ -54,110 +51,17 @@
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
-typedef enum ListErr
-{
-    LIST_SUCCESS,
-    LIST_DUMP_ERROR,
-    LIST_CALLOC_ERROR,
-    LIST_DATA_REALLOC_ERROR,
-    LIST_LOGFILE_OPEN_ERROR,
-    LIST_FILENAME_TOOBIG,
-    LIST_IMAGE_NAME_NULL,
-    LIST_CTX_NULL,
-    LIST_DATA_NULL,
-    LIST_CAPACITY_EXCEEDS_MAX,
-    LIST_HEAD_NEGATIVE,
-    LIST_HEAD_TOOBIG,
-    LIST_TAIL_NEGATIVE,
-    LIST_TAIL_TOOBIG,
-    LIST_FREE_NEGATIVE,
-    LIST_FREE_TOOBIG,
-    LIST_NEXT_NEGATIVE,
-    LIST_NEXT_TOOBIG,
-    LIST_PREV_NEGATIVE,
-    LIST_PREV_TOOBIG,
-    LIST_FREE_NEXT_NEGATIVE,
-    LIST_FREE_NEXT_TOOBIG,
-    LIST_FREE_PREV_NOT_NULL,
-    LIST_POSITION_NEGATIVE,
-    LIST_POSITION_TOO_BIG,
-    LIST_NO_SUCH_ELEMENT,
-    LIST_NEXT_IS_CYCLED,
-    LIST_PREV_IS_CYCLED,
-    LIST_FREE_IS_CYCLED,
-    LIST_FREE_VALUE_NOT_PZN,
-    LIST_FILLED_VALUE_IS_PZN,
-    LIST_SIZE_EXCEEDS_CAPACITY,
-    LIST_SIZE_IS_WRONG,
-    LIST_CAP_IS_WRONG,
-    LIST_NEXT_WRONG,
-    LIST_PREV_WRONG,
-    LIST_FLAG_IS_WRONG
-} ListErr_t;
-
-//——————————————————————————————————————————————————————————————————————————————————————————
-
 #ifdef LIST_DEBUG
 
-//——————————————————————————————————————————————————————————————————————————————————————————
-
-const char* const LIST_STR_ERRORS[] =
-{
-    [LIST_SUCCESS]               = "LIST_SUCCESS",
-    [LIST_DUMP_ERROR]            = "LIST_DUMP_ERROR",
-    [LIST_CALLOC_ERROR]          = "LIST_CALLOC_ERROR",
-    [LIST_DATA_REALLOC_ERROR]    = "LIST_DATA_REALLOC_ERROR",
-    [LIST_LOGFILE_OPEN_ERROR]    = "LIST_LOGFILE_OPEN_ERROR",
-    [LIST_FILENAME_TOOBIG]       = "LIST_FILENAME_TOOBIG",
-    [LIST_IMAGE_NAME_NULL]       = "LIST_IMAGE_NAME_NULL",
-    [LIST_CTX_NULL]              = "LIST_CTX_NULL",
-    [LIST_DATA_NULL]             = "LIST_DATA_NULL",
-    [LIST_CAPACITY_EXCEEDS_MAX]  = "LIST_CAPACITY_EXCEEDS_MAX",
-    [LIST_HEAD_NEGATIVE]         = "LIST_HEAD_NEGATIVE",
-    [LIST_HEAD_TOOBIG]           = "LIST_HEAD_TOOBIG",
-    [LIST_TAIL_NEGATIVE]         = "LIST_TAIL_NEGATIVE",
-    [LIST_TAIL_TOOBIG]           = "LIST_TAIL_TOOBIG",
-    [LIST_FREE_NEGATIVE]         = "LIST_FREE_NEGATIVE",
-    [LIST_FREE_TOOBIG]           = "LIST_FREE_TOOBIG",
-    [LIST_NEXT_NEGATIVE]         = "LIST_NEXT_NEGATIVE",
-    [LIST_NEXT_TOOBIG]           = "LIST_NEXT_TOOBIG",
-    [LIST_PREV_NEGATIVE]         = "LIST_PREV_NEGATIVE",
-    [LIST_PREV_TOOBIG]           = "LIST_PREV_TOOBIG",
-    [LIST_FREE_NEXT_NEGATIVE]    = "LIST_FREE_NEXT_NEGATIVE",
-    [LIST_FREE_NEXT_TOOBIG]      = "LIST_FREE_NEXT_TOOBIG",
-    [LIST_FREE_PREV_NOT_NULL]    = "LIST_FREE_PREV_NOT_NULL",
-    [LIST_POSITION_NEGATIVE]     = "LIST_POSITION_NEGATIVE",
-    [LIST_POSITION_TOO_BIG]      = "LIST_POSITION_TOO_BIG",
-    [LIST_NO_SUCH_ELEMENT]       = "LIST_NO_SUCH_ELEMENT",
-    [LIST_NEXT_IS_CYCLED]        = "LIST_NEXT_IS_CYCLED",
-    [LIST_PREV_IS_CYCLED]        = "LIST_PREV_IS_CYCLED",
-    [LIST_FREE_IS_CYCLED]        = "LIST_FREE_IS_CYCLED",
-    [LIST_FREE_VALUE_NOT_PZN]    = "LIST_FREE_VALUE_NOT_PZN",
-    [LIST_FILLED_VALUE_IS_PZN]   = "LIST_FILLED_VALUE_IS_PZN",
-    [LIST_SIZE_EXCEEDS_CAPACITY] = "LIST_SIZE_EXCEEDS_CAPACITY",
-    [LIST_SIZE_IS_WRONG]         = "LIST_SIZE_IS_WRONG",
-    [LIST_CAP_IS_WRONG]          = "LIST_CAP_IS_WRONG",
-    [LIST_NEXT_WRONG]            = "LIST_NEXT_WRONG",
-    [LIST_PREV_WRONG]            = "LIST_PREV_WRONG",
-    [LIST_FLAG_IS_WRONG]         = "LIST_FLAG_IS_WRONG"
-};
-
-//——————————————————————————————————————————————————————————————————————————————————————————
-
-typedef struct ListDumpInfo
-{
-    ListErr_t   error;
-    const char* image_name;
-    const char* reason;
-    const char* func;
-    const char* file;
-    int         line;
-    int         command_arg;
-} ListDumpInfo_t;
-
-//——————————————————————————————————————————————————————————————————————————————————————————
-
+int SetDirectories(char* log_filename, char* image_dir, char* dot_dir);
 int LinearSearch(int* array, size_t size, int elem);
+
+ListErr_t ListCheck(List_t*     list,
+                    const char* message,
+                    const char* func,
+                    const char* file,
+                    int         line,
+                    int         arg);
 
 ListErr_t ListVerify          (List_t* list);
 ListErr_t ListVerifyNext      (List_t* list, size_t* next_count_ptr);
@@ -166,99 +70,6 @@ ListErr_t ListVerifyFree      (List_t* list, size_t* free_count_ptr);
 ListErr_t ListDump            (List_t* list, ListDumpInfo_t* dump_info);
 int       ListDumpStruct      (List_t* list, ListDumpInfo_t* dump_info, FILE* fp);
 int       ListDumpData        (List_t* list, ListDumpInfo_t* dump_info, FILE* fp);
-ListErr_t ListCreateDumpGraph (List_t* list,
-                               const char* image_name,
-                               const char* dot_dir);
-
-//——————————————————————————————————————————————————————————————————————————————————————————
-
-int SetDirectories(char* log_filename, char* image_dir, char* dot_dir);
-
-int MakeListNodes(List_t* list, FILE* fp);
-
-int MakeListEdge(int pos, List_t* list, FILE* fp);
-
-int ProcessFreeEdgeCase(
-    int   pos,
-    int   prev,
-    int   next,
-    int   next_limits_cross,
-    FILE* fp);
-
-int ProcessUncrossedLimitsEdge(
-    int     pos,
-    int     next,
-    int     prev_limits_cross,
-    int     next_limits_cross,
-    List_t* list,
-    FILE*   fp);
-
-//——————————————————————————————————————————————————————————————————————————————————————————
-
-int MakeNode(
-    const char* name,
-    const char* label,
-    const char* color,
-    const char* fillcolor,
-    const char* fontcolor,
-    const char* shape,
-    FILE*       fp);
-
-int MakeDefaultNode(
-    int         index,
-    const char* color,
-    const char* fillcolor,
-    const char* fontcolor,
-    const char* shape,
-    List_t*     list,
-    FILE*       fp);
-
-int MakeWrongNode(
-    int         pos,
-    int         value,
-    const char* connection,
-    FILE*       fp);
-
-//——————————————————————————————————————————————————————————————————————————————————————————
-
-int MakeDefaultEdge(
-    int         index1,
-    int         index2,
-    const char* color,
-    const char* constraint,
-    const char* dir,
-    const char* style,
-    const char* arrowhead,
-    const char* arrowtail,
-    FILE*       fp);
-
-int MakeWrongEdge(
-    int         pos,
-    const char* connection,
-    FILE*       fp);
-
-int MakeEdge(
-    const char* node1,
-    const char* node2,
-    const char* color,
-    const char* constraint,
-    const char* dir,
-    const char* style,
-    const char* arrowhead,
-    const char* arrowtail,
-    FILE*       fp);
-
-//——————————————————————————————————————————————————————————————————————————————————————————
-
-int PrintArg(
-    const char* arg_name,
-    const char* arg_value,
-    int*        is_first_arg,
-    FILE*       fp);
-
-int MakeHeadTailFree(
-    List_t*     list,
-    FILE*       fp);
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 

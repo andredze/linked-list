@@ -53,6 +53,9 @@ int main()
         break;
 
     list.data[3].prev = 84;
+
+    ListCheck(&list, "PREV = ", "main", "main.cpp", 57, 84);
+
     // list.size = 2;
     // list.data[6].next = 4;
     // list.data[6].prev = 4;
