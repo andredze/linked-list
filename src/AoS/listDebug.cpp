@@ -263,23 +263,6 @@ ListErr_t ListVerifyFree(List_t* list, size_t* free_count_ptr)
 
 //------------------------------------------------------------------------------------------
 
-int LinearSearch(int* array, size_t size, int elem)
-{
-    assert(array != NULL);
-
-    for (int i = 0; i < (int) size; i++)
-    {
-        if (array[i] == elem)
-        {
-            return i;
-        }
-    }
-
-    return -1;
-}
-
-//------------------------------------------------------------------------------------------
-
 ListErr_t ListDump(List_t* list, ListDumpInfo_t* dump_info)
 {
     static int calls_count = 1;

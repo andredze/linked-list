@@ -18,21 +18,41 @@ CXXFLAGS = -D _DEBUG -ggdb3 -std=c++17 -O0 -Wall -Wextra -Weffc++ 				 		   		 \
 
 CXXFLAGS += -I include
 
+AOSFLAGS = -I include/AoS
+
+STDFLAGS = -I include/std
+
 ifdef DEBUG
-CXXFLAGS += -D LIST_DEBUG
+AOSFLAGS += -D LIST_DEBUG -D AOS_LIST
 endif
 
-SOURCES = src/main.cpp 		   \
-		  src/listCommands.cpp \
-		  src/listDebug.cpp	   \
-		  src/listGraph.cpp
+ifdef DEBUG
+STDFLAGS += -D STD_LIST_DEBUG -D STD_LIST
+endif
+
+SOURCES = src/main.cpp \
+		  src/graphCommon.cpp
+
+AOSSOURCES = src/AoS/listCommands.cpp  \
+		  	 src/AoS/listDebug.cpp	   \
+		  	 src/AoS/listGraph.cpp
+
+STDSOURCES = src/std/stdListCommands.cpp   \
+			 src/std/stdListDebug.cpp	   \
+		     src/std/stdListGraph.cpp
 
 EXECUTABLE = run
 
 LOG_DIR = log/*
 
-all:
-	$(CXX) $(CXXFLAGS) $(SOURCES) -o $(EXECUTABLE)
+aos:
+	$(CXX) $(CXXFLAGS) $(AOSFLAGS) $(SOURCES) $(AOSSOURCES) -o $(EXECUTABLE)
+
+std:
+	$(CXX) $(CXXFLAGS) $(STDFLAGS) $(SOURCES) $(STDSOURCES) -o $(EXECUTABLE)
+
+both:
+	$(CXX) $(CXXFLAGS) $(AOSFLAGS) $(STDFLAGS) $(SOURCES) $(AOSSOURCES) $(STDSOURCES) -o $(EXECUTABLE)
 
 clean:
 	rm -rf $(EXECUTABLE) $(LOG_DIR)

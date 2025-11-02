@@ -3,7 +3,6 @@
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
-#include "common.h"
 #include "listTypes.h"
 #include "listGraph.h"
 #include <time.h>
@@ -54,7 +53,6 @@
 #ifdef LIST_DEBUG
 
 int SetDirectories(char* log_filename, char* image_dir, char* dot_dir);
-int LinearSearch(int* array, size_t size, int elem);
 
 ListErr_t ListCheck(List_t*     list,
                     const char* message,
@@ -70,11 +68,6 @@ ListErr_t ListVerifyFree      (List_t* list, size_t* free_count_ptr);
 ListErr_t ListDump            (List_t* list, ListDumpInfo_t* dump_info);
 int       ListDumpStruct      (List_t* list, ListDumpInfo_t* dump_info, FILE* fp);
 int       ListDumpData        (List_t* list, ListDumpInfo_t* dump_info, FILE* fp);
-
-//——————————————————————————————————————————————————————————————————————————————————————————
-
-const int MAX_NODE_NAME_LEN = 32;
-const int MAX_LABEL_LEN     = 256;
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 

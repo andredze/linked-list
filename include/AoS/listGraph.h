@@ -5,6 +5,7 @@
 
 #include "listDebug.h"
 #include "listTypes.h"
+#include "graphCommon.h"
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
@@ -32,13 +33,6 @@ int MakeHeadTailFree(
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
-int ProcessFreeEdgeCase(
-    int   pos,
-    int   prev,
-    int   next,
-    int   next_limits_cross,
-    FILE* fp);
-
 int ProcessUncrossedLimitsEdge(
     int     pos,
     int     next,
@@ -49,15 +43,6 @@ int ProcessUncrossedLimitsEdge(
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
-int MakeNode(
-    const char* name,
-    const char* label,
-    const char* color,
-    const char* fillcolor,
-    const char* fontcolor,
-    const char* shape,
-    FILE*       fp);
-
 int MakeDefaultNode(
     int         index,
     const char* color,
@@ -65,49 +50,6 @@ int MakeDefaultNode(
     const char* fontcolor,
     const char* shape,
     List_t*     list,
-    FILE*       fp);
-
-int MakeWrongNode(
-    int         pos,
-    int         value,
-    const char* connection,
-    FILE*       fp);
-
-//——————————————————————————————————————————————————————————————————————————————————————————
-
-int MakeDefaultEdge(
-    int         index1,
-    int         index2,
-    const char* color,
-    const char* constraint,
-    const char* dir,
-    const char* style,
-    const char* arrowhead,
-    const char* arrowtail,
-    FILE*       fp);
-
-int MakeWrongEdge(
-    int         pos,
-    const char* connection,
-    FILE*       fp);
-
-int MakeEdge(
-    const char* node1,
-    const char* node2,
-    const char* color,
-    const char* constraint,
-    const char* dir,
-    const char* style,
-    const char* arrowhead,
-    const char* arrowtail,
-    FILE*       fp);
-
-//——————————————————————————————————————————————————————————————————————————————————————————
-
-int PrintArg(
-    const char* arg_name,
-    const char* arg_value,
-    int*        is_first_arg,
     FILE*       fp);
 
 //——————————————————————————————————————————————————————————————————————————————————————————

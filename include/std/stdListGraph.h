@@ -1,43 +1,59 @@
-#ifndef COMMON_H
-#define COMMON_H
+#ifndef STD_LIST_GRAPH_H
+#define STD_LIST_GRAPH_H
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <string.h>
-#include "colors.h"
+#include "stdListDebug.h"
+#include "stdListTypes.h"
+#include "graphCommon.h"
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
-#define BEGIN do {
-
-#define END   } while (0)
+#ifdef STD_LIST_DEBUG
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
-#define PRINTERR(text, ...)                                                     \
-        BEGIN                                                                   \
-        fprintf(stderr, RED "In %s:%d from %s:\nERROR: " text "\n" RESET_CLR,   \
-                __FILE__, __LINE__, __PRETTY_FUNCTION__, ##__VA_ARGS__);        \
-        END
+StdListErr_t StdListCreateDumpGraph(
+    StdList_t* list,
+    const char* image_name,
+    const char* dot_dir);
+
+int MakeStdListNodes(
+    StdList_t* list,
+    FILE*   fp);
+
+int MakeStdListEdge(
+    int     pos,
+    StdList_t* list,
+    FILE*   fp);
+
+int MakeStdListHeadTailFree(
+    StdList_t* list,
+    FILE* fp);
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
-#ifdef DEBUG
-    #define DPRINTF(text, ...)                                          \
-            BEGIN                                                       \
-            fprintf(stderr, YELLOW text RESET_CLR, ##__VA_ARGS__);      \
-            END
-#else
-    #define DPRINTF(...) ;
-#endif /* LIST_DEBUG */
+int StdListProcessUncrossedLimitsEdge(int     pos,
+                                      int     next,
+                                      int     prev_limits_cross,
+                                      int     next_limits_cross,
+                                      StdList_t* list,
+                                      FILE*   fp);
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
-const int MAX_FILENAME_LEN = 50;
+int MakeStdListDefaultNode(int index,
+                           const char* color,
+                           const char* fillcolor,
+                           const char* fontcolor,
+                           const char* shape,
+                           StdList_t* list,
+                           FILE* fp);
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
-#endif /* COMMON_H */
+#endif /* STD_LIST_DEBUG */
+
+//——————————————————————————————————————————————————————————————————————————————————————————
+
+#endif /* STD_LIST_GRAPH_H */
