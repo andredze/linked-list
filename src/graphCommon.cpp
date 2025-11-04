@@ -1,22 +1,5 @@
 #include "graphCommon.h"
 
-//——————————————————————————————————————————————————————————————————————————————————————————
-
-int LinearSearch(int* array, size_t size, int elem)
-{
-    assert(array != NULL);
-
-    for (int i = 0; i < (int) size; i++)
-    {
-        if (array[i] == elem)
-        {
-            return i;
-        }
-    }
-
-    return -1;
-}
-
 //------------------------------------------------------------------------------------------
 
 int ProcessFreeEdgeCase(int   pos,

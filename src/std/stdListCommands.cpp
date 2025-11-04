@@ -10,13 +10,13 @@ StdListErr_t StdListCtor(StdList_t* list, StdNode_t** head_node)
 
     if (list == NULL)
     {
-        PRINTERR("STD_LIST_CTX_NULL");
-        return STD_LIST_CTX_NULL;
+        PRINTERR("STD_LIST_NULL");
+        return STD_LIST_NULL;
     }
 
-    list->head = (StdNode_t*) calloc(1, sizeof(StdNode_t));
+    list->root = (StdNode_t*) calloc(1, sizeof(StdNode_t));
 
-    if (list->head == NULL)
+    if (list->root == NULL)
     {
         PRINTERR("STD_LIST_CALLOC_ERROR");
         return STD_LIST_CALLOC_ERROR;
@@ -25,11 +25,11 @@ StdListErr_t StdListCtor(StdList_t* list, StdNode_t** head_node)
     list->size = 0;
 
     /* Filling the null element */
-    (*list->head).value = STD_LIST_POISON;
-    (*list->head).next  = list->head;
-    (*list->head).prev  = list->head;
+    (*list->root).value = STD_LIST_POISON;
+    (*list->root).next  = list->root;
+    (*list->root).prev  = list->root;
 
-    *head_node = list->head;
+    *head_node = list->root;
 
     // STD_LIST_CALL_DUMP(list, "ctor", "DUMP_CTOR_CAP=");
 
@@ -50,7 +50,7 @@ StdListErr_t StdListInsertAfter(StdList_t*  list,
 
     DPRINTF("> Start StdListInsertAfter(node = %p, value = " SPEC ")\n", node, value);
 
-    // DEBUG_STD_LIST_CHECK(list, "START_INSERT_AFTER_", pos);
+    // DEBUG_STD_LIST_CHECK(list, "START_INSERT_AFTER_", 0);
 
     if (node == NULL)
     {
@@ -78,7 +78,7 @@ StdListErr_t StdListInsertAfter(StdList_t*  list,
 
     // DEBUG_STD_LIST_CHECK(list, "END_INSERT_AFTER_", pos);
 
-    // STD_LIST_CALL_DUMP(list, "insert", "DUMP_INSERT_AFTER_", pos);
+    STD_LIST_CALL_DUMP(list, "insert", "DUMP_INSERT_AFTER_", (size_t) node);
 
     DPRINTF("> End   StdListInsertAfter\n\n");
 
@@ -313,14 +313,14 @@ StdListErr_t StdListDtor(StdList_t* list)
 
     if (list == NULL)
     {
-        PRINTERR("STD_LIST_CTX_NULL");
-        return STD_LIST_CTX_NULL;
+        PRINTERR("STD_LIST_NULL");
+        return STD_LIST_NULL;
     }
 
-    StdNode_t* node = list->head;
+    StdNode_t* node = list->root;
     StdNode_t* next = NULL;
 
-    while (next != list->head)
+    while (next != list->root)
     {
         DPRINTF("free node at %p with value = " SPEC ";\n", node, (*node).value);
         next = node->next;

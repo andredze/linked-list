@@ -52,6 +52,8 @@
 
 #ifdef LIST_DEBUG
 
+int LinearSearch(int* array, size_t size, int elem);
+
 int SetDirectories(char* log_filename, char* image_dir, char* dot_dir);
 
 ListErr_t ListCheck(List_t*     list,

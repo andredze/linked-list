@@ -9,7 +9,7 @@ StdListErr_t StdListCheck(StdList_t* list,
                           const char*    func,
                           const char*    file,
                           int            line,
-                          int            arg)
+                          size_t            arg)
 {
     StdListErr_t verify_status = STD_LIST_SUCCESS;
     if ((verify_status = StdListVerify(list)))
@@ -34,56 +34,18 @@ StdListErr_t StdListVerify(StdList_t* list)
 {
     if (list == NULL)
     {
-        return STD_LIST_CTX_NULL;
+        return STD_LIST_NULL;
     }
-    if (list->capacity > STD_LIST_MAX_CAPACITY)
+    if (list->root == NULL)
     {
-        return STD_LIST_CAPACITY_EXCEEDS_MAX;
+        return STD_LIST_HEAD_NULL;
     }
-    if (list->size >= list->capacity)
+    if (list->size > STD_LIST_MAX_SIZE)
     {
-        return STD_LIST_SIZE_EXCEEDS_CAPACITY;
-    }
-    if (list->data == NULL)
-    {
-        return STD_LIST_DATA_NULL;
-    }
-    if (list->data[0].next < 0)
-    {
-        return STD_LIST_HEAD_NEGATIVE;
-    }
-    if ((size_t) list->data[0].next >= list->capacity)
-    {
-        return STD_LIST_HEAD_TOOBIG;
-    }
-    if (list->data[0].prev < 0)
-    {
-        return STD_LIST_TAIL_NEGATIVE;
-    }
-    if ((size_t) list->data[0].prev >= list->capacity)
-    {
-        return STD_LIST_TAIL_TOOBIG;
-    }
-    if (list->free < -1)
-    {
-        return STD_LIST_FREE_NEGATIVE;
-    }
-    if (list->free != -1 && (size_t) list->free >= list->capacity)
-    {
-        return STD_LIST_FREE_TOOBIG;
-    }
-    if (list->is_sorted != 0 && list->is_sorted != 1)
-    {
-        return STD_LIST_FLAG_IS_WRONG;
-    }
-    if (list->do_linear_realloc != 0 && list->do_linear_realloc != 1)
-    {
-        return STD_LIST_FLAG_IS_WRONG;
+        return STD_LIST_SIZE_EXCEEDS_MAX;
     }
 
     size_t next_count = 0;
-    size_t prev_count = 0;
-    size_t free_count = 0;
 
     StdListErr_t error = STD_LIST_SUCCESS;
 
@@ -91,22 +53,10 @@ StdListErr_t StdListVerify(StdList_t* list)
     {
         return error;
     }
-    if ((error = StdListVerifyPrev(list, &prev_count)) != STD_LIST_SUCCESS)
-    {
-        return error;
-    }
-    if ((error = StdListVerifyFree(list, &free_count)) != STD_LIST_SUCCESS)
-    {
-        return error;
-    }
 
-    if (next_count != list->size || prev_count != list->size)
+    if (next_count != list->size)
     {
         return STD_LIST_SIZE_IS_WRONG;
-    }
-    if (next_count + free_count + 1 != list->capacity)
-    {
-        return STD_LIST_CAP_IS_WRONG;
     }
 
     return STD_LIST_SUCCESS;
@@ -117,146 +67,39 @@ StdListErr_t StdListVerify(StdList_t* list)
 StdListErr_t StdListVerifyNext(StdList_t* list, size_t* next_count_ptr)
 {
     assert(list       != NULL);
-    assert(list->data != NULL);
+    assert(list->root != NULL);
 
-    int*   next_nodes = (int*) calloc(list->capacity, sizeof(list->data[0].next));
-    size_t next_count = 0;
+    StdNode_t** next_nodes = (StdNode_t**) calloc(list->size, sizeof(StdNode_t*));
+    size_t      next_count = 0;
 
-    for (int i = list->data[0].next; i != 0; i = list->data[i].next)
+    for (StdNode_t* node = list->root; node != list->root; node = node->next)
     {
-        if (list->data[i].value == STD_LIST_POISON)
+        for (size_t i = 0; i < next_count; i++)
         {
-            free(next_nodes);
-            return STD_LIST_FILLED_VALUE_IS_PZN;
+            if (next_nodes[i] == node)
+            {
+                return STD_LIST_LOOP;
+            }
         }
-        if (LinearSearch(next_nodes, list->capacity, i) != -1)
+        if (node->prev == NULL)
         {
-            free(next_nodes);
-            return STD_LIST_NEXT_IS_CYCLED;
+            return STD_NODE_PREV_NULL;
         }
-        if (list->data[i].next < 0)
+        if (node->next == NULL)
         {
-            free(next_nodes);
-            return STD_LIST_NEXT_NEGATIVE;
+            return STD_NODE_NEXT_NULL;
         }
-        if ((size_t) list->data[i].next >= list->capacity)
+        if ((*node->next).prev != node)
         {
-            free(next_nodes);
-            return STD_LIST_NEXT_TOOBIG;
-        }
-        if (list->data[list->data[i].next].prev != i)
-        {
-            free(next_nodes);
-            return STD_LIST_PREV_WRONG;
-        }
-        if (list->data[list->data[i].prev].next != i)
-        {
-            free(next_nodes);
-            return STD_LIST_NEXT_WRONG;
+            return STD_NODE_WRONG_PREV;
         }
 
-        next_nodes[next_count++] = i;
+        next_nodes[next_count++] = node;
     }
 
     free(next_nodes);
 
     *next_count_ptr = next_count;
-
-    return STD_LIST_SUCCESS;
-}
-
-//------------------------------------------------------------------------------------------
-
-StdListErr_t StdListVerifyPrev(StdList_t* list, size_t* prev_count_ptr)
-{
-    assert(list       != NULL);
-    assert(list->data != NULL);
-
-    int*   prev_nodes = (int*) calloc(list->capacity, sizeof(list->data[0].prev));
-    size_t prev_count = 0;
-
-    for (int i = list->data[0].prev; i != 0; i = list->data[i].prev)
-    {
-        if (LinearSearch(prev_nodes, list->capacity, i) != -1)
-        {
-            free(prev_nodes);
-            return STD_LIST_PREV_IS_CYCLED;
-        }
-        if (list->data[i].prev < 0)
-        {
-            free(prev_nodes);
-            return STD_LIST_PREV_NEGATIVE;
-        }
-        if ((size_t) list->data[i].prev >= list->capacity)
-        {
-            free(prev_nodes);
-            return STD_LIST_PREV_TOOBIG;
-        }
-        if (list->data[list->data[i].next].prev != i)
-        {
-            free(prev_nodes);
-            return STD_LIST_PREV_WRONG;
-        }
-        if (list->data[list->data[i].prev].next != i)
-        {
-            free(prev_nodes);
-            return STD_LIST_NEXT_WRONG;
-        }
-
-        prev_nodes[prev_count++] = i;
-    }
-
-    free(prev_nodes);
-
-    *prev_count_ptr = prev_count;
-
-    return STD_LIST_SUCCESS;
-}
-
-//------------------------------------------------------------------------------------------
-
-StdListErr_t StdListVerifyFree(StdList_t* list, size_t* free_count_ptr)
-{
-    assert(list       != NULL);
-    assert(list->data != NULL);
-
-    int*   free_nodes = (int*) calloc(list->capacity, sizeof(list->data[0].next));
-    size_t free_count = 0;
-
-    for (int i = list->free; i > 0; i = list->data[i].next)
-    {
-        if (list->data[i].value != STD_LIST_POISON)
-        {
-            free(free_nodes);
-            return STD_LIST_FREE_VALUE_NOT_PZN;
-        }
-        if (LinearSearch(free_nodes, list->capacity, i) != -1)
-        {
-            free(free_nodes);
-            return STD_LIST_FREE_IS_CYCLED;
-        }
-        if (list->data[i].next < -1)
-        {
-            free(free_nodes);
-            return STD_LIST_FREE_NEXT_NEGATIVE;
-        }
-        if (list->data[i].next != -1 && (size_t) list->data[i].next >= list->capacity)
-        {
-            free(free_nodes);
-            return STD_LIST_FREE_NEXT_TOOBIG;
-        }
-        if (list->data[i].prev != -1)
-        {
-            free(free_nodes);
-            return STD_LIST_FREE_PREV_NOT_NULL;
-        }
-
-        free_nodes[free_count++] = i;
-    }
-
-    free(free_nodes);
-
-    *free_count_ptr = free_count;
 
     return STD_LIST_SUCCESS;
 }
@@ -289,7 +132,7 @@ StdListErr_t StdListDump(StdList_t* list, StdListDumpInfo_t* dump_info)
 
     calls_count++;
 
-    fprintf(fp, "<pre>\n<h3><font color=blue>%s%d</font></h3>",
+    fprintf(fp, "<pre>\n<h3><font color=blue>%s%zu</font></h3>",
                 dump_info->reason,
                 dump_info->command_arg);
 
@@ -306,14 +149,6 @@ StdListErr_t StdListDump(StdList_t* list, StdListDumpInfo_t* dump_info)
                 dump_info->line);
 
     if (StdListDumpStruct(list, dump_info, fp))
-    {
-        fclose(fp);
-        return STD_LIST_SUCCESS;
-    }
-
-    if (dump_info->error == STD_LIST_CAPACITY_EXCEEDS_MAX ||
-        dump_info->error == STD_LIST_HEAD_NEGATIVE        ||
-        dump_info->error == STD_LIST_HEAD_TOOBIG)
     {
         fclose(fp);
         return STD_LIST_SUCCESS;
@@ -353,20 +188,20 @@ int StdListSetDirectories(char* log_filename, char* image_dir, char* dot_dir)
 
     strftime(time_dir, sizeof(time_dir), "%d%m%Y_%H%M%S", info);
 
-    snprintf(dir, 100, "log/%s", time_dir);
+    snprintf(dir, 100, "std_log/%s", time_dir);
     mkdir(dir, 0777);
 
-    sprintf(image_dir, "log/%s/svg", time_dir);
+    sprintf(image_dir, "std_log/%s/svg", time_dir);
 
     DPRINTF("image_dir = %s;\n", image_dir);
     mkdir(image_dir, 0777);
 
-    sprintf(dot_dir, "log/%s/dot", time_dir);
+    sprintf(dot_dir, "std_log/%s/dot", time_dir);
 
     DPRINTF("dot_dir   = %s;\n", dot_dir);
     mkdir(dot_dir, 0777);
 
-    sprintf(log_filename, "log/%s/list_log.html", time_dir);
+    sprintf(log_filename, "std_log/%s/list_log.html", time_dir);
 
     return 0;
 }
@@ -383,31 +218,19 @@ int StdListDumpStruct(StdList_t* list, StdListDumpInfo_t* dump_info, FILE* fp)
                 "—————————————————————————————————————————————————————————————\n\n",
                 list);
 
-    if (dump_info->error == STD_LIST_CTX_NULL)
+    if (dump_info->error == STD_LIST_NULL)
     {
         return 0;
     }
 
-    fprintf(fp, "do_linear_realloc = %d;\n"
-                "is_sorted = %d;\n"
-                "capacity  = %zu;\n"
-                "size = %zu;\n"
-                "free = %d;\n",
-                list->do_linear_realloc,
-                list->is_sorted,
-                list->capacity,
-                list->size,
-                list->free);
+    fprintf(fp, "size = %zu;\n", list->size);
 
-    if (dump_info->error == STD_LIST_DATA_NULL)
+    if (dump_info->error == STD_LIST_HEAD_NULL)
     {
         return 0;
     }
 
-    fprintf(fp, "head = %d;\n"
-                "tail = %d;\n",
-                list->data[0].next,
-                list->data[0].prev);
+    fprintf(fp, "head = %p;\n", list->root);
 
     StdListDumpData(list, dump_info, fp);
 
@@ -425,46 +248,41 @@ int StdListDumpData(StdList_t* list, StdListDumpInfo_t* dump_info, FILE* fp)
     assert(dump_info != NULL);
     assert(fp        != NULL);
 
-    fprintf(fp, "data [%p]:\n[\n", list->data);
+    fprintf(fp, "\tptr    ");
 
-    if (dump_info->error == STD_LIST_CAPACITY_EXCEEDS_MAX)
+    StdNode_t* next = NULL;
+
+    for (StdNode_t* node = list->root; next != list->root; node = next)
     {
-        return 0;
-    }
-
-    fprintf(fp, "\tindex  ");
-
-    for (size_t i = 0; i < list->capacity; i++)
-    {
-        fprintf(fp, "%4zu ", i);
+        fprintf(fp, "%14p ", node);
+        next = node->next;
     }
 
     fprintf(fp, "\n\tvalue [");
 
-    for (size_t i = 0; i < list->capacity; i++)
+    next = NULL;
+    for (StdNode_t* node = list->root; next != list->root; node = next)
     {
-        if (list->data[i].value == STD_LIST_POISON)
-        {
-            fprintf(fp, " PZN ");
-        }
-        else
-        {
-            fprintf(fp, "%4d ", list->data[i].value);
-        }
+        fprintf(fp, "%14d ", node->value);
+        next = node->next;
     }
 
     fprintf(fp, "];\n\tnext  [");
 
-    for (size_t i = 0; i < list->capacity; i++)
+    next = NULL;
+    for (StdNode_t* node = list->root; next != list->root; node = next)
     {
-        fprintf(fp, "%4d ", list->data[i].next);
+        fprintf(fp, "%14p ", node->next);
+        next = node->next;
     }
 
     fprintf(fp, "];\n\tprev  [");
 
-    for (size_t i = 0; i < list->capacity; i++)
+    next = NULL;
+    for (StdNode_t* node = list->root; next != list->root; node = next)
     {
-        fprintf(fp, "%4d ", list->data[i].prev);
+        fprintf(fp, "%14p ", node->prev);
+        next = node->next;
     }
 
     fprintf(fp, "];\n];\n");

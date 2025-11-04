@@ -25,7 +25,7 @@ const elem_t STD_LIST_POISON = 0xAB0BA;
 typedef struct StdNode
 {
     struct StdNode* prev;
-    elem_t     value;
+    elem_t          value;
     struct StdNode* next;
 } StdNode_t;
 
@@ -33,8 +33,7 @@ typedef struct StdNode
 
 typedef struct StdList
 {
-    StdNode_t* head;
-    StdNode_t* tail;
+    StdNode_t* root;
     size_t     size;
 } StdList_t;
 
@@ -43,43 +42,21 @@ typedef struct StdList
 typedef enum StdListErr
 {
     STD_LIST_SUCCESS,
+    STD_LIST_NULL,
     STD_LIST_NULL_NODE,
     STD_LIST_DUMP_ERROR,
     STD_LIST_CALLOC_ERROR,
-    STD_LIST_DATA_REALLOC_ERROR,
+    STD_LIST_HEAD_NULL,
+    STD_LIST_SIZE_EXCEEDS_MAX,
+    STD_LIST_LOOP,
+    STD_NODE_PREV_NULL,
+    STD_NODE_NEXT_NULL,
+    STD_NODE_WRONG_PREV,
     STD_LIST_LOGFILE_OPEN_ERROR,
     STD_LIST_FILENAME_TOOBIG,
     STD_LIST_IMAGE_NAME_NULL,
-    STD_LIST_CTX_NULL,
-    STD_LIST_DATA_NULL,
-    STD_LIST_CAPACITY_EXCEEDS_MAX,
-    STD_LIST_HEAD_NEGATIVE,
-    STD_LIST_HEAD_TOOBIG,
-    STD_LIST_TAIL_NEGATIVE,
-    STD_LIST_TAIL_TOOBIG,
-    STD_LIST_FREE_NEGATIVE,
-    STD_LIST_FREE_TOOBIG,
-    STD_LIST_NEXT_NEGATIVE,
-    STD_LIST_NEXT_TOOBIG,
-    STD_LIST_PREV_NEGATIVE,
-    STD_LIST_PREV_TOOBIG,
-    STD_LIST_FREE_NEXT_NEGATIVE,
-    STD_LIST_FREE_NEXT_TOOBIG,
-    STD_LIST_FREE_PREV_NOT_NULL,
-    STD_LIST_POSITION_NEGATIVE,
-    STD_LIST_POSITION_TOO_BIG,
     STD_LIST_NO_SUCH_ELEMENT,
-    STD_LIST_NEXT_IS_CYCLED,
-    STD_LIST_PREV_IS_CYCLED,
-    STD_LIST_FREE_IS_CYCLED,
-    STD_LIST_FREE_VALUE_NOT_PZN,
-    STD_LIST_FILLED_VALUE_IS_PZN,
-    STD_LIST_SIZE_EXCEEDS_CAPACITY,
     STD_LIST_SIZE_IS_WRONG,
-    STD_LIST_CAP_IS_WRONG,
-    STD_LIST_NEXT_WRONG,
-    STD_LIST_PREV_WRONG,
-    STD_LIST_FLAG_IS_WRONG
 } StdListErr_t;
 
 //——————————————————————————————————————————————————————————————————————————————————————————
@@ -90,44 +67,22 @@ typedef enum StdListErr
 
 const char* const STD_LIST_STR_ERRORS[] =
 {
-    [STD_LIST_SUCCESS]               = "STD_LIST_SUCCESS",
-    [STD_LIST_NULL_NODE]             = "STD_LIST_NULL_NODE",
-    [STD_LIST_DUMP_ERROR]            = "STD_LIST_DUMP_ERROR",
-    [STD_LIST_CALLOC_ERROR]          = "STD_LIST_CALLOC_ERROR",
-    [STD_LIST_DATA_REALLOC_ERROR]    = "STD_LIST_DATA_REALLOC_ERROR",
-    [STD_LIST_LOGFILE_OPEN_ERROR]    = "STD_LIST_LOGFILE_OPEN_ERROR",
-    [STD_LIST_FILENAME_TOOBIG]       = "STD_LIST_FILENAME_TOOBIG",
-    [STD_LIST_IMAGE_NAME_NULL]       = "STD_LIST_IMAGE_NAME_NULL",
-    [STD_LIST_CTX_NULL]              = "STD_LIST_CTX_NULL",
-    [STD_LIST_DATA_NULL]             = "STD_LIST_DATA_NULL",
-    [STD_LIST_CAPACITY_EXCEEDS_MAX]  = "STD_LIST_CAPACITY_EXCEEDS_MAX",
-    [STD_LIST_HEAD_NEGATIVE]         = "STD_LIST_HEAD_NEGATIVE",
-    [STD_LIST_HEAD_TOOBIG]           = "STD_LIST_HEAD_TOOBIG",
-    [STD_LIST_TAIL_NEGATIVE]         = "STD_LIST_TAIL_NEGATIVE",
-    [STD_LIST_TAIL_TOOBIG]           = "STD_LIST_TAIL_TOOBIG",
-    [STD_LIST_FREE_NEGATIVE]         = "STD_LIST_FREE_NEGATIVE",
-    [STD_LIST_FREE_TOOBIG]           = "STD_LIST_FREE_TOOBIG",
-    [STD_LIST_NEXT_NEGATIVE]         = "STD_LIST_NEXT_NEGATIVE",
-    [STD_LIST_NEXT_TOOBIG]           = "STD_LIST_NEXT_TOOBIG",
-    [STD_LIST_PREV_NEGATIVE]         = "STD_LIST_PREV_NEGATIVE",
-    [STD_LIST_PREV_TOOBIG]           = "STD_LIST_PREV_TOOBIG",
-    [STD_LIST_FREE_NEXT_NEGATIVE]    = "STD_LIST_FREE_NEXT_NEGATIVE",
-    [STD_LIST_FREE_NEXT_TOOBIG]      = "STD_LIST_FREE_NEXT_TOOBIG",
-    [STD_LIST_FREE_PREV_NOT_NULL]    = "STD_LIST_FREE_PREV_NOT_NULL",
-    [STD_LIST_POSITION_NEGATIVE]     = "STD_LIST_POSITION_NEGATIVE",
-    [STD_LIST_POSITION_TOO_BIG]      = "STD_LIST_POSITION_TOO_BIG",
-    [STD_LIST_NO_SUCH_ELEMENT]       = "STD_LIST_NO_SUCH_ELEMENT",
-    [STD_LIST_NEXT_IS_CYCLED]        = "STD_LIST_NEXT_IS_CYCLED",
-    [STD_LIST_PREV_IS_CYCLED]        = "STD_LIST_PREV_IS_CYCLED",
-    [STD_LIST_FREE_IS_CYCLED]        = "STD_LIST_FREE_IS_CYCLED",
-    [STD_LIST_FREE_VALUE_NOT_PZN]    = "STD_LIST_FREE_VALUE_NOT_PZN",
-    [STD_LIST_FILLED_VALUE_IS_PZN]   = "STD_LIST_FILLED_VALUE_IS_PZN",
-    [STD_LIST_SIZE_EXCEEDS_CAPACITY] = "STD_LIST_SIZE_EXCEEDS_CAPACITY",
-    [STD_LIST_SIZE_IS_WRONG]         = "STD_LIST_SIZE_IS_WRONG",
-    [STD_LIST_CAP_IS_WRONG]          = "STD_LIST_CAP_IS_WRONG",
-    [STD_LIST_NEXT_WRONG]            = "STD_LIST_NEXT_WRONG",
-    [STD_LIST_PREV_WRONG]            = "STD_LIST_PREV_WRONG",
-    [STD_LIST_FLAG_IS_WRONG]         = "STD_LIST_FLAG_IS_WRONG"
+    [STD_LIST_SUCCESS]            = "STD_LIST_SUCCESS",
+    [STD_LIST_NULL]               = "STD_LIST_NULL",
+    [STD_LIST_NULL_NODE]          = "STD_LIST_NULL_NODE",
+    [STD_LIST_DUMP_ERROR]         = "STD_LIST_DUMP_ERROR",
+    [STD_LIST_CALLOC_ERROR]       = "STD_LIST_CALLOC_ERROR",
+    [STD_LIST_HEAD_NULL]          = "STD_LIST_HEAD_NULL",
+    [STD_LIST_SIZE_EXCEEDS_MAX]   = "STD_LIST_SIZE_EXCEEDS_MAX",
+    [STD_LIST_LOOP]               = "STD_LIST_LOOP",
+    [STD_NODE_PREV_NULL]          = "STD_NODE_PREV_NULL",
+    [STD_NODE_NEXT_NULL]          = "STD_NODE_NEXT_NULL",
+    [STD_NODE_WRONG_PREV]         = "STD_NODE_WRONG_PREV",
+    [STD_LIST_LOGFILE_OPEN_ERROR] = "STD_LIST_LOGFILE_OPEN_ERROR",
+    [STD_LIST_FILENAME_TOOBIG]    = "STD_LIST_FILENAME_TOOBIG",
+    [STD_LIST_IMAGE_NAME_NULL]    = "STD_LIST_IMAGE_NAME_NULL",
+    [STD_LIST_NO_SUCH_ELEMENT]    = "STD_LIST_NO_SUCH_ELEMENT",
+    [STD_LIST_SIZE_IS_WRONG]      = "STD_LIST_SIZE_IS_WRONG",
 };
 
 //——————————————————————————————————————————————————————————————————————————————————————————
@@ -140,7 +95,7 @@ typedef struct StdListDumpInfo
     const char* func;
     const char* file;
     int         line;
-    int         command_arg;
+    size_t      command_arg;
 } StdListDumpInfo_t;
 
 //——————————————————————————————————————————————————————————————————————————————————————————
@@ -149,8 +104,7 @@ typedef struct StdListDumpInfo
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
-const size_t STD_LIST_MIN_CAPACITY = 4;
-const size_t STD_LIST_MAX_CAPACITY = 1024 * 1024 * 1024;
+const size_t STD_LIST_MAX_SIZE = 1024 * 1024 * 1024;
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 

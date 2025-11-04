@@ -4,7 +4,7 @@
 #endif
 #ifdef STD_LIST
     #include "stdListCommands.h"
-    // #include "stdListDebug.h"
+    #include "stdListDebug.h"
 #endif
 #include "common.h"
 #include <time.h>
@@ -59,9 +59,6 @@ int main()
     if (StdListInsertBefore(&std_list_data, insert_node, 1000, &insert_node))
         break;
 
-    if (StdListErase       (&std_list_data, insert_node))
-        break;
-
     END;
 
     if (StdListDtor(&std_list_data))
@@ -82,7 +79,7 @@ int main()
 
     int insert_pos = 0;
 
-    if (ListCtor(&list, 32, 1))
+    if (ListCtor(&list, 16, 1))
         break;
 
     if (ListInsertAfter(&list, 0, 25, &insert_pos))
@@ -97,7 +94,13 @@ int main()
     if (ListInsertBefore(&list, 0, 35, &insert_pos))
         break;
 
-    list.data[2].prev = 3;
+
+    // list.data[2].prev = 3;
+    list.data[3].prev = 84;
+
+#ifdef LIST_DEBUG
+    ListCheck(&list, "PREV = ", "main", "main.cpp", 57, 84);
+#endif /* LIST_DEBUG */
 
     if (ListInsertBefore(&list, insert_pos, 32, &insert_pos))
         break;

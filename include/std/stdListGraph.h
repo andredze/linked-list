@@ -22,27 +22,32 @@ int MakeStdListNodes(
     StdList_t* list,
     FILE*   fp);
 
-int MakeStdListEdge(
-    int     pos,
-    StdList_t* list,
-    FILE*   fp);
+int MakeStdListEdge(StdNode_t* node,
+                    StdList_t* list,
+                    FILE*      fp);
 
-int MakeStdListHeadTailFree(
-    StdList_t* list,
-    FILE* fp);
+int MakeStdListHeadTail(StdList_t* list, FILE* fp);
+
+int MakeStdListDefaultEdge (StdNode_t*  node1,
+                            StdNode_t*  node2,
+                            const char* color,
+                            const char* constraint,
+                            const char* dir,
+                            const char* style,
+                            const char* arrowhead,
+                            const char* arrowtail,
+                            FILE*       fp);
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
-int StdListProcessUncrossedLimitsEdge(int     pos,
-                                      int     next,
-                                      int     prev_limits_cross,
-                                      int     next_limits_cross,
+int StdListProcessUncrossedLimitsEdge(StdNode_t* node,
+                                      StdNode_t* next,
                                       StdList_t* list,
                                       FILE*   fp);
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
-int MakeStdListDefaultNode(int index,
+int MakeStdListDefaultNode(StdNode_t* node,
                            const char* color,
                            const char* fillcolor,
                            const char* fontcolor,

@@ -53,12 +53,15 @@ StdListErr_t StdListCreateDumpGraph(StdList_t* list,
     MakeStdListNodes(list, fp);
 
     /* make all edges */
-    for (int pos = 1; pos < (int) list->capacity; pos++)
+    StdNode_t* next = NULL;
+
+    for (StdNode_t* node = list->root; next != list->root; node = next)
     {
-        MakeStdListEdge(pos, list, fp);
+        MakeStdListEdge(node, list, fp);
+        next = node->next;
     }
 
-    MakeStdListHeadTailFree(list, fp);
+    MakeStdListHeadTail(list, fp);
 
     fprintf(fp, "}\n");
 
@@ -70,7 +73,7 @@ StdListErr_t StdListCreateDumpGraph(StdList_t* list,
 //------------------------------------------------------------------------------------------
 
 int MakeStdListNodes(StdList_t* list,
-                     FILE*   fp)
+                     FILE*      fp)
 {
     assert(list != NULL);
     assert(fp   != NULL);
@@ -78,32 +81,31 @@ int MakeStdListNodes(StdList_t* list,
     /* place all nodes in one rank */
     fprintf(fp, "\t{ rank=same; ");
 
-    for (size_t ind = 0; ind < list->capacity; ind++)
+    StdNode_t* next = NULL;
+
+    for (StdNode_t* node = list->root; next != list->root; node = next)
     {
-        fprintf(fp, "node%zu; ", ind);
+        fprintf(fp, "node%p; ", node);
+        next = node->next;
     }
+    next = NULL;
 
     fprintf(fp, "}\n");
 
     /* Create invisible edges for all nodes */
-    for (int i = 0; i < (int) list->capacity - 1; i++)
+    for (StdNode_t* node = list->root; next != list->root; node = next)
     {
-        MakeDefaultEdge(i, i + 1, NULL, NULL, NULL, "invis", NULL, NULL, fp);
+        next = node->next;
+        MakeStdListDefaultEdge(node, next, NULL, NULL, NULL, "invis", NULL, NULL, fp);
     }
+    next = NULL;
 
-    MakeStdListDefaultNode(0, "#3E3A22", "#ecede8", "#3E3A22", "record", list, fp);
+    MakeStdListDefaultNode(list->root, "#3E3A22", "#ecede8", "#3E3A22", "record", list, fp);
 
-    for (int i = 1; (size_t) i < list->capacity; i++)
+    for (StdNode_t* node = list->root; next != list->root; node = next)
     {
-        /* if free */
-        if (list->data[i].prev == -1)
-        {
-            MakeStdListDefaultNode(i, "#006400", "#C0FFC0", "#005300", NULL, list, fp);
-        }
-        else
-        {
-            MakeStdListDefaultNode(i, NULL, NULL, NULL, NULL, list, fp);
-        }
+        MakeStdListDefaultNode(node, NULL, NULL, NULL, NULL, list, fp);
+        next = node->next;
     }
 
     return 0;
@@ -111,62 +113,58 @@ int MakeStdListNodes(StdList_t* list,
 
 //------------------------------------------------------------------------------------------
 
-int MakeStdListEdge(int     pos,
+int MakeStdListDefaultEdge (StdNode_t*  node1,
+                            StdNode_t*  node2,
+                            const char* color,
+                            const char* constraint,
+                            const char* dir,
+                            const char* style,
+                            const char* arrowhead,
+                            const char* arrowtail,
+                            FILE*       fp)
+{
+    assert(fp != NULL);
+
+    char name_node1[MAX_NODE_NAME_LEN] = "";
+    char name_node2[MAX_NODE_NAME_LEN] = "";
+
+    sprintf (name_node1, "node%p", node1);
+    sprintf (name_node2, "node%p", node2);
+
+    MakeEdge(name_node1, name_node2, color, constraint, dir, style, arrowhead, arrowtail, fp);
+
+    return 0;
+}
+
+//------------------------------------------------------------------------------------------
+
+int MakeStdListEdge(StdNode_t* node,
                     StdList_t* list,
-                    FILE*   fp)
+                    FILE*      fp)
 {
     assert(list != NULL);
     assert(fp   != NULL);
 
-    int next = list->data[pos].next;
-    int prev = list->data[pos].prev;
+    StdNode_t* next = node->next;
+    StdNode_t* prev = node->prev;
 
-    if (prev == -1 && (next == 0 || next == -1))
+    if ((*node->prev).next != node)
     {
-        return 0;
-    }
-
-    int next_limits_cross = (((size_t) next < list->capacity && next >= 0) == 0);
-    int prev_limits_cross = (((size_t) prev < list->capacity && prev >= 0) == 0);
-
-    if (ProcessFreeEdgeCase(pos, prev, next, next_limits_cross, fp) == 1)
-    {
-        return 0;
-    }
-
-    if (!(prev_limits_cross) && list->data[prev].next != pos)
-    {
-        if (list->data[list->data[prev].next].prev != prev)
+        if (((*node->prev).next)->prev != prev)
         {
             MakeStdListDefaultNode(prev, "#530000", "#FFC0C0", "#400000", NULL, list, fp);
         }
-        MakeDefaultEdge(pos, prev, "#640000", NULL, NULL, "dashed", "dot", NULL, fp);
+        MakeStdListDefaultEdge(node, prev, "#640000", NULL, NULL, "dashed", "dot", NULL, fp);
     }
 
-    if (StdListProcessUncrossedLimitsEdge(pos, next,
-                                          prev_limits_cross,
-                                          next_limits_cross,
-                                          list, fp) == 1)
+    if (StdListProcessUncrossedLimitsEdge(node, next, list, fp) == 1)
     {
         return 0;
     }
 
-    if (next_limits_cross)
+    if (next != list->root)
     {
-        MakeWrongNode(pos, next, "next", fp);
-        MakeWrongEdge(pos,       "next", fp);
-    }
-    else
-    {
-        if (next != 0)
-        {
-            MakeDefaultEdge(pos, next, "#000064", NULL, NULL, NULL, NULL, NULL, fp);
-        }
-    }
-    if (prev_limits_cross)
-    {
-        MakeWrongNode(pos, prev, "prev", fp);
-        MakeWrongEdge(pos,       "prev", fp);
+        MakeStdListDefaultEdge(node, next, "#000064", NULL, NULL, NULL, NULL, NULL, fp);
     }
 
     return 0;
@@ -174,50 +172,33 @@ int MakeStdListEdge(int     pos,
 
 //------------------------------------------------------------------------------------------
 
-int StdListProcessUncrossedLimitsEdge(int     pos,
-                                      int     next,
-                                      int     prev_limits_cross,
-                                      int     next_limits_cross,
+int StdListProcessUncrossedLimitsEdge(StdNode_t* node,
+                                      StdNode_t* next,
                                       StdList_t* list,
                                       FILE*   fp)
 {
     assert(list != NULL);
     assert(fp   != NULL);
 
-    if (next_limits_cross || prev_limits_cross)
-    {
-        return 0;
-    }
-
-    if (next == 0)
+    if (next == list->root)
     {
         return 1;
     }
 
-    if (list->data[next].prev == pos)
+    if ((*node->next).prev == node)
     {
         // NOTE: next and prev with different arrow heads
-        MakeDefaultEdge(pos, next, "#000064", NULL, "both", NULL, "normal", "normal", fp);
+        MakeStdListDefaultEdge(node, next, "#000064", NULL, "both", NULL, "normal", "normal", fp);
 
         return 1;
     }
-
-    DPRINTF("next.prev = %d\n", list->data[next].prev);
-
-    if (list->data[next].prev < (int) list->capacity &&
-        list->data[list->data[next].prev].next != next)
-    {
-        MakeStdListDefaultNode(next, "#530000", "#FFC0C0", "#400000", NULL, list, fp);
-    }
-
-    MakeDefaultEdge(pos, next, "#640000", NULL, NULL, "dashed", NULL, NULL, fp);
 
     return 1;
 }
 
 //------------------------------------------------------------------------------------------
 
-int MakeStdListDefaultNode(int index,
+int MakeStdListDefaultNode(StdNode_t* node,
                            const char* color,
                            const char* fillcolor,
                            const char* fontcolor,
@@ -230,25 +211,18 @@ int MakeStdListDefaultNode(int index,
 
     char name[MAX_NODE_NAME_LEN] = "";
 
-    sprintf(name, "node%d", index);
+    sprintf(name, "node%p", node);
 
     char label[MAX_LABEL_LEN] = "";
     int  current_pos = 0;
 
-    current_pos += sprintf(label, "{ idx = %d | value = ", index);
+    current_pos += sprintf(label, "{ idx = %p | value = ", node);
 
-    if (list->data[index].value == STD_LIST_POISON)
-    {
-        current_pos += sprintf(current_pos + label, "PZN");
-    }
-    else
-    {
-        current_pos += sprintf(current_pos + label, SPEC, list->data[index].value);
-    }
+    current_pos += sprintf(current_pos + label, SPEC, node->value);
 
-    sprintf(current_pos + label, " | { prev = %d | next = %d }}",
-                                 list->data[index].prev,
-                                 list->data[index].next);
+    sprintf(current_pos + label, " | { prev = %p | next = %p }}",
+                                    node->prev,
+                                    node->next);
 
     MakeNode(name, label, color, fillcolor, fontcolor, shape, fp);
 
@@ -257,7 +231,7 @@ int MakeStdListDefaultNode(int index,
 
 //------------------------------------------------------------------------------------------
 
-int MakeStdListHeadTailFree(StdList_t* list, FILE* fp)
+int MakeStdListHeadTail(StdList_t* list, FILE* fp)
 {
     assert(list != NULL);
     assert(fp   != NULL);
@@ -274,30 +248,24 @@ int MakeStdListHeadTailFree(StdList_t* list, FILE* fp)
         arrowhead=none,
         constraint=true
     ];
-    tail; head; free;)""\n");
+    tail; head;)""\n");
 
     /* Make edges to the elements */
-    if (list->data[0].prev >= 0)
+    if ((*list->root).prev != NULL)
     {
         char name[MAX_NODE_NAME_LEN] = "";
-        sprintf (name, "node%d", list->data[0].prev);
+        sprintf (name, "node%p", (*list->root).prev);
         MakeEdge("tail", name, NULL, NULL, NULL, NULL, NULL, NULL, fp);
     }
-    if (list->data[0].next >= 0)
+    if ((*list->root).next != NULL)
     {
         char name[MAX_NODE_NAME_LEN] = "";
-        sprintf (name, "node%d", list->data[0].next);
+        sprintf (name, "node%p", (*list->root).next);
         MakeEdge("head", name, NULL, NULL, NULL, NULL, NULL, NULL, fp);
-    }
-    if (list->free >= 0)
-    {
-        char name[MAX_NODE_NAME_LEN] = "";
-        sprintf (name, "node%d", list->free);
-        MakeEdge("free", name, NULL, NULL, NULL, NULL, NULL, NULL, fp);
     }
 
     /* Place on one rank */
-    fprintf(fp, "\t{ rank=same; tail; head; free; }\n");
+    fprintf(fp, "\t{ rank=same; tail; head; }\n");
 
     return 0;
 }

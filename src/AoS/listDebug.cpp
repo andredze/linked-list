@@ -114,6 +114,23 @@ ListErr_t ListVerify(List_t* list)
 
 //------------------------------------------------------------------------------------------
 
+int LinearSearch(int* array, size_t size, int elem)
+{
+    assert(array != NULL);
+
+    for (int i = 0; i < (int) size; i++)
+    {
+        if (array[i] == elem)
+        {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+//------------------------------------------------------------------------------------------
+
 ListErr_t ListVerifyNext(List_t* list, size_t* next_count_ptr)
 {
     assert(list       != NULL);
@@ -148,11 +165,6 @@ ListErr_t ListVerifyNext(List_t* list, size_t* next_count_ptr)
         {
             free(next_nodes);
             return LIST_PREV_WRONG;
-        }
-        if (list->data[list->data[i].prev].next != i)
-        {
-            free(next_nodes);
-            return LIST_NEXT_WRONG;
         }
 
         next_nodes[next_count++] = i;
@@ -191,11 +203,6 @@ ListErr_t ListVerifyPrev(List_t* list, size_t* prev_count_ptr)
         {
             free(prev_nodes);
             return LIST_PREV_TOOBIG;
-        }
-        if (list->data[list->data[i].next].prev != i)
-        {
-            free(prev_nodes);
-            return LIST_PREV_WRONG;
         }
         if (list->data[list->data[i].prev].next != i)
         {

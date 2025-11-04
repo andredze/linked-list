@@ -37,13 +37,13 @@ AOSSOURCES = src/AoS/listCommands.cpp  \
 		  	 src/AoS/listDebug.cpp	   \
 		  	 src/AoS/listGraph.cpp
 
-STDSOURCES = src/std/stdListCommands.cpp
-# 			 src/std/stdListDebug.cpp	   \
-# 		     src/std/stdListGraph.cpp
+STDSOURCES = src/std/stdListCommands.cpp   \
+			 src/std/stdListDebug.cpp 	   \
+		     src/std/stdListGraph.cpp
 
 EXECUTABLE = run
 
-LOG_DIR = log/*
+LOG_DIR = log/* std_log/*
 
 aos:
 	$(CXX) $(CXXFLAGS) $(AOSFLAGS) $(SOURCES) $(AOSSOURCES) -o $(EXECUTABLE)

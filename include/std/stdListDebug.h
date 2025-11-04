@@ -59,7 +59,7 @@ StdListErr_t StdListCheck(StdList_t*     list,
                           const char* func,
                           const char* file,
                           int         line,
-                          int         arg);
+                          size_t         arg);
 
 StdListErr_t StdListVerify          (StdList_t* list);
 StdListErr_t StdListVerifyNext      (StdList_t* list, size_t* next_count_ptr);
