@@ -24,6 +24,10 @@ StdListErr_t StdListInsertBefore(StdList_t*  list,
 StdListErr_t StdListErase       (StdList_t* list,
                                  StdNode_t* node);
 
+StdListErr_t StdListGetHead     (StdList_t* list, StdNode_t** head);
+StdListErr_t StdListGetTail     (StdList_t* list, StdNode_t** tail);
+StdListErr_t StdListGetValue    (StdList_t* list, StdNode_t*  node, elem_t* value);
+
 //——————————————————————————————————————————————————————————————————————————————————————————
 
 #endif /* STD_LIST_COMMANDS_H */

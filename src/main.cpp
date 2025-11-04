@@ -59,6 +59,12 @@ int main()
     if (StdListInsertBefore(&std_list_data, insert_node, 1000, &insert_node))
         break;
 
+    // for (int i = 0; i < 10000; i++)
+    // {
+    //     if (StdListInsertBefore(&std_list_data, insert_node, 100, &insert_node))
+    //         return EXIT_FAILURE;
+    // }
+
     END;
 
     if (StdListDtor(&std_list_data))
@@ -119,6 +125,12 @@ int main()
 
     if (ListInsertBefore(&list, insert_pos, 32, &insert_pos))
         break;
+
+    // for (int i = 0; i < 10000; i++)
+    // {
+    //     if (ListInsertBefore(&list, insert_pos, 100, &insert_pos))
+    //         return EXIT_FAILURE;
+    // }
 
     END;
 

@@ -216,7 +216,7 @@ int MakeStdListDefaultNode(StdNode_t* node,
     char label[MAX_LABEL_LEN] = "";
     int  current_pos = 0;
 
-    current_pos += sprintf(label, "{ idx = %p | value = ", node);
+    current_pos += sprintf(label, "{ ptr = %p | value = ", node);
 
     current_pos += sprintf(current_pos + label, SPEC, node->value);
 
