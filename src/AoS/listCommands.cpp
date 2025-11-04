@@ -2,8 +2,10 @@
 
 //------------------------------------------------------------------------------------------
 
-static ListErr_t ListInsert  (List_t* list, int pos, elem_t value,
-                              int* insert_pos, ListInsertType_t type);
+static ListErr_t ListInsert(List_t* list,
+                            int     pos,
+                            elem_t  value,
+                            int*    insert_pos);
 
 static ListErr_t ListCheckPos(List_t* list, int pos);
 
@@ -106,7 +108,12 @@ ListErr_t ListInsertAfter(List_t* list, int pos, elem_t value, int* insert_pos)
     DEBUG_LIST_CHECK(list, "START_INSERT_AFTER_", pos);
 
     ListErr_t error = LIST_SUCCESS;
-    if (ListInsert(list, pos, value, insert_pos, LIST_INSERT_AFTER))
+    if ((error = ListCheckPos(list, pos)) != LIST_SUCCESS)
+    {
+        return error;
+    }
+
+    if ((error = ListInsert(list, pos, value, insert_pos)))
     {
         return error;
     }
@@ -129,7 +136,13 @@ ListErr_t ListInsertBefore(List_t* list, int pos, elem_t value, int* insert_pos)
     DEBUG_LIST_CHECK(list, "START_INSERT_BEFORE_", pos);
 
     ListErr_t error = LIST_SUCCESS;
-    if (ListInsert(list, pos, value, insert_pos, LIST_INSERT_BEFORE))
+    if ((error = ListCheckPos(list, pos)) != LIST_SUCCESS)
+    {
+        return error;
+    }
+
+    /* Insert before position is equivalent to inserting after previous position */
+    if ((error = ListInsert(list, list->data[pos].prev, value, insert_pos)))
     {
         return error;
     }
@@ -145,17 +158,15 @@ ListErr_t ListInsertBefore(List_t* list, int pos, elem_t value, int* insert_pos)
 
 //------------------------------------------------------------------------------------------
 
-static ListErr_t ListInsert(List_t* list, int pos, elem_t value,
-                            int* insert_pos, ListInsertType_t type)
+static ListErr_t ListInsert(List_t* list,
+                            int     pos,
+                            elem_t  value,
+                            int*    insert_pos)
 {
     assert(list       != NULL);
     assert(insert_pos != NULL);
 
     ListErr_t error = LIST_SUCCESS;
-    if ((error = ListCheckPos(list, pos)) != LIST_SUCCESS)
-    {
-        return error;
-    }
 
     if (list->free == -1)
     {
@@ -172,33 +183,21 @@ static ListErr_t ListInsert(List_t* list, int pos, elem_t value,
     }
 
     int cur_index = list->free;
-    int pos_prev = list->data[pos].prev;
-    int pos_next = list->data[pos].next;
+    int pos_next  = list->data[pos].next;
 
     /* set new free element */
     list->free = list->data[list->free].next;
 
-    if (type == LIST_INSERT_BEFORE)
-    {
-        /* connect previous element to current */
-        list->data[pos_prev].next = cur_index;
+    /* connect previous element to current */
+    list->data[pos].next      = cur_index;
 
-        /* connect next element to current */
-        list->data[pos].prev      = cur_index;
-    }
-    else
-    {
-        /* connect previous element to current */
-        list->data[pos].next      = cur_index;
-
-        /* connect next element to current */
-        list->data[pos_next].prev = cur_index;
-    }
+    /* connect next element to current */
+    list->data[pos_next].prev = cur_index;
 
     /* connect current element to previous and next */
-    list->data[cur_index].prev  = type == LIST_INSERT_BEFORE ? pos_prev : pos;
+    list->data[cur_index].prev  = pos;
     list->data[cur_index].value = value;
-    list->data[cur_index].next  = type == LIST_INSERT_AFTER  ? pos_next : pos;
+    list->data[cur_index].next  = pos_next;
 
     *insert_pos = cur_index;
 

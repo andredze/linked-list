@@ -8,18 +8,21 @@
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
-StdListErr_t StdListCtor        (StdListData_t* list_data, StdNode_t** head_node);
-StdListErr_t StdListDtor        (StdListData_t* list_data);
+StdListErr_t StdListCtor        (StdList_t* list, StdNode_t** head_node);
+StdListErr_t StdListDtor        (StdList_t* list);
 
-StdListErr_t StdListInsertAfter (StdListData_t* list_data,
-                                 StdNode_t*     node,
-                                 elem_t         value,
-                                 StdNode_t**    insert_node);
+StdListErr_t StdListInsertAfter (StdList_t*  list,
+                                 StdNode_t*  node,
+                                 elem_t      value,
+                                 StdNode_t** insert_node);
 
-StdListErr_t StdListInsertBefore(StdListData_t* list_data,
-                                 StdNode_t*     node,
-                                 elem_t         value,
-                                 StdNode_t**    insert_node);
+StdListErr_t StdListInsertBefore(StdList_t*  list,
+                                 StdNode_t*  node,
+                                 elem_t      value,
+                                 StdNode_t** insert_node);
+
+StdListErr_t StdListErase       (StdList_t* list,
+                                 StdNode_t* node);
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 

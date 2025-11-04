@@ -19,7 +19,7 @@ int main()
 
     clock_t std_start_time = clock();
 
-    StdListData_t std_list_data = {};
+    StdList_t std_list_data = {};
 
     BEGIN
 
@@ -56,7 +56,10 @@ int main()
     if (StdListInsertBefore(&std_list_data, head_node,   35, &insert_node))
         break;
 
-    if (StdListInsertBefore(&std_list_data, insert_node, 32, &insert_node))
+    if (StdListInsertBefore(&std_list_data, insert_node, 1000, &insert_node))
+        break;
+
+    if (StdListErase       (&std_list_data, insert_node))
         break;
 
     END;
@@ -94,6 +97,8 @@ int main()
     if (ListInsertBefore(&list, 0, 35, &insert_pos))
         break;
 
+    list.data[2].prev = 3;
+
     if (ListInsertBefore(&list, insert_pos, 32, &insert_pos))
         break;
 
@@ -123,14 +128,22 @@ int main()
 
 #endif
 
+#ifdef STD_LIST
     double std_run_time = (double) (std_end_time - std_start_time) / CLOCKS_PER_SEC;
-    double aos_run_time = (double) (aos_end_time - aos_start_time) / CLOCKS_PER_SEC;
-
     printf("Standard list run time       = %lg;\n", std_run_time);
+#endif
+#ifdef AOS_LIST
+    double aos_run_time = (double) (aos_end_time - aos_start_time) / CLOCKS_PER_SEC;
     printf("Array of structures run time = %lg;\n", aos_run_time);
+#endif
+
+#ifdef STD_LIST
+#ifdef AOS_LIST
     printf("Absolute difference          = %lg;\n", std_run_time - aos_run_time);
     printf("How faster? (std/aos)        = %lg;\n", std_run_time / aos_run_time);
     printf("Relative difference          = %lg%%;\n", 100 * (std_run_time - aos_run_time) / aos_run_time);
+#endif
+#endif
 
     DPRINTF(GREEN "Tests ran successfully\n\n" RESET_CLR);
 

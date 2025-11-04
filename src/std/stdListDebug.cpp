@@ -4,12 +4,12 @@
 
 //==========================================================================================
 
-StdListErr_t StdListCheck(StdList_t*     list,
-                          const char* message,
-                          const char* func,
-                          const char* file,
-                          int         line,
-                          int         arg)
+StdListErr_t StdListCheck(StdList_t* list,
+                          const char*    message,
+                          const char*    func,
+                          const char*    file,
+                          int            line,
+                          int            arg)
 {
     StdListErr_t verify_status = STD_LIST_SUCCESS;
     if ((verify_status = StdListVerify(list)))

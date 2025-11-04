@@ -2,34 +2,34 @@
 
 //------------------------------------------------------------------------------------------
 
-StdListErr_t StdListCtor(StdListData_t* list_data, StdNode_t** head_node)
+StdListErr_t StdListCtor(StdList_t* list, StdNode_t** head_node)
 {
     assert(head_node != NULL);
 
     DPRINTF("> Start StdListCtor()\n");
 
-    if (list_data == NULL)
+    if (list == NULL)
     {
         PRINTERR("STD_LIST_CTX_NULL");
         return STD_LIST_CTX_NULL;
     }
 
-    list_data->head = (StdNode_t*) calloc(1, sizeof(StdNode_t));
+    list->head = (StdNode_t*) calloc(1, sizeof(StdNode_t));
 
-    if (list_data->head == NULL)
+    if (list->head == NULL)
     {
         PRINTERR("STD_LIST_CALLOC_ERROR");
         return STD_LIST_CALLOC_ERROR;
     }
 
-    list_data->size = 0;
+    list->size = 0;
 
     /* Filling the null element */
-    (*list_data->head).value = STD_LIST_POISON;
-    (*list_data->head).next  = list_data->head;
-    (*list_data->head).prev  = list_data->head;
+    (*list->head).value = STD_LIST_POISON;
+    (*list->head).next  = list->head;
+    (*list->head).prev  = list->head;
 
-    *head_node = list_data->head;
+    *head_node = list->head;
 
     // STD_LIST_CALL_DUMP(list, "ctor", "DUMP_CTOR_CAP=");
 
@@ -40,12 +40,12 @@ StdListErr_t StdListCtor(StdListData_t* list_data, StdNode_t** head_node)
 
 //------------------------------------------------------------------------------------------
 
-StdListErr_t StdListInsertAfter(StdListData_t* list_data,
-                                StdNode_t*     node,
-                                elem_t         value,
-                                StdNode_t**    insert_node)
+StdListErr_t StdListInsertAfter(StdList_t*  list,
+                                StdNode_t*  node,
+                                elem_t      value,
+                                StdNode_t** insert_node)
 {
-    assert(list_data   != NULL);
+    assert(list        != NULL);
     assert(insert_node != NULL);
 
     DPRINTF("> Start StdListInsertAfter(node = %p, value = " SPEC ")\n", node, value);
@@ -74,6 +74,8 @@ StdListErr_t StdListInsertAfter(StdListData_t* list_data,
 
     *insert_node = new_node;
 
+    list->size++;
+
     // DEBUG_STD_LIST_CHECK(list, "END_INSERT_AFTER_", pos);
 
     // STD_LIST_CALL_DUMP(list, "insert", "DUMP_INSERT_AFTER_", pos);
@@ -85,16 +87,16 @@ StdListErr_t StdListInsertAfter(StdListData_t* list_data,
 
 //------------------------------------------------------------------------------------------
 
-StdListErr_t StdListInsertBefore(StdListData_t* list_data,
-                                 StdNode_t*     node,
-                                 elem_t         value,
-                                 StdNode_t**    insert_node)
+StdListErr_t StdListInsertBefore(StdList_t*  list,
+                                 StdNode_t*  node,
+                                 elem_t      value,
+                                 StdNode_t** insert_node)
 {
     DPRINTF("> Start StdListInsertBefore(node = %p, value = " SPEC ")\n", node, value);
 
     StdListErr_t error = STD_LIST_SUCCESS;
 
-    if ((error = StdListInsertAfter(list_data, node->prev, value, insert_node)))
+    if ((error = StdListInsertAfter(list, node->prev, value, insert_node)))
     {
         return error;
     }
@@ -106,7 +108,7 @@ StdListErr_t StdListInsertBefore(StdListData_t* list_data,
 
 //------------------------------------------------------------------------------------------
 
-// static StdListErr_t StdListRealloc(StdListData_t* list)
+// static StdListErr_t StdListRealloc(StdList_t* list)
 // {
 //     DPRINTF("\t> Start StdListRealloc()\n");
 //
@@ -147,7 +149,7 @@ StdListErr_t StdListInsertBefore(StdListData_t* list_data,
 //
 // //------------------------------------------------------------------------------------------
 //
-// static StdListErr_t StdListReallocLinear(StdListData_t* list)
+// static StdListErr_t StdListReallocLinear(StdList_t* list)
 // {
 //     DPRINTF("\t> Start StdListReallocLinear()\n");
 //
@@ -203,63 +205,46 @@ StdListErr_t StdListInsertBefore(StdListData_t* list_data,
 //     return STD_LIST_SUCCESS;
 // }
 //
-// //------------------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------------------
+
+StdListErr_t StdListErase(StdList_t* list, StdNode_t* node)
+{
+    DPRINTF("> Start StdListErase(node = %p)\n", node);
+
+    // DEBUG_STD_LIST_CHECK(list, "START_ERASE_", pos);
+
+    if (node == NULL)
+    {
+        return STD_LIST_NULL_NODE;
+    }
+
+    StdNode_t* next = node->next;
+    StdNode_t* prev = node->prev;
+
+    next->prev = prev;
+    prev->next = next;
+
+    node->value = STD_LIST_POISON;
+    node->prev  = NULL;
+    node->next  = NULL;
+
+    free(node);
+
+    list->size--;
+
+    // DEBUG_STD_LIST_CHECK(list, "END_ERASE_", pos);
+
+    // STD_LIST_CALL_DUMP(list, "erase", "DUMP_ERASE_", pos);
+
+    DPRINTF("> End   StdListErase\n\n");
+
+    return STD_LIST_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------
 //
-// StdListErr_t StdListErase(StdListData_t* list, int pos)
-// {
-//     DPRINTF("> Start StdListErase(pos = %d)\n", pos);
-//
-//     DEBUG_STD_LIST_CHECK(list, "START_ERASE_", pos);
-//
-//     StdListErr_t error = STD_LIST_SUCCESS;
-//     if ((error = StdListCheckPos(list, pos)) != STD_LIST_SUCCESS)
-//     {
-//         return error;
-//     }
-//
-//     if (pos != list->data[0].prev)
-//     {
-//         list->is_sorted = 0;
-//     }
-//
-//     int next_ind = list->data[pos].next;
-//     int prev_ind = list->data[pos].prev;
-//
-//     /* Connect pos to free and set poisons */
-//     list->data[pos].prev  = -1;
-//     list->data[pos].value = STD_LIST_POISON;
-//     list->data[pos].next  = list->free;
-//
-//     list->free = pos;
-//
-//     DPRINTF(R"(    prev_ind = %d;
-//     next_ind = %d;
-//     head     = %d;
-//     tail     = %d;
-//     pos      = %d;)",
-//     prev_ind,
-//     next_ind,
-//     list->data[0].next,
-//     list->data[0].prev,
-//     pos);
-//
-//     list->data[prev_ind].next = next_ind;
-//     list->data[next_ind].prev = prev_ind;
-//
-//     list->size--;
-//
-//     DEBUG_STD_LIST_CHECK(list, "END_ERASE_", pos);
-//
-//     STD_LIST_CALL_DUMP(list, "erase", "DUMP_ERASE_", pos);
-//
-//     DPRINTF("> End   StdListErase\n\n");
-//
-//     return STD_LIST_SUCCESS;
-// }
-//
-// //------------------------------------------------------------------------------------------
-//
-// StdListErr_t StdListGetHead(StdListData_t* list, int* head)
+// StdListErr_t StdListGetHead(StdList_t* list, int* head)
 // {
 //     DPRINTF("> Start StdListGetHead()\n");
 //
@@ -278,7 +263,7 @@ StdListErr_t StdListInsertBefore(StdListData_t* list_data,
 //
 // //------------------------------------------------------------------------------------------
 //
-// StdListErr_t StdListGetTail(StdListData_t* list, int* tail)
+// StdListErr_t StdListGetTail(StdList_t* list, int* tail)
 // {
 //     DPRINTF("> Start StdListGetTail()\n");
 //
@@ -297,7 +282,7 @@ StdListErr_t StdListInsertBefore(StdListData_t* list_data,
 //
 // //------------------------------------------------------------------------------------------
 //
-// StdListErr_t StdListGetValue(StdListData_t* list, int pos, elem_t* value)
+// StdListErr_t StdListGetValue(StdList_t* list, int pos, elem_t* value)
 // {
 //     DPRINTF("> Start StdListGetValue()\n");
 //
@@ -322,20 +307,20 @@ StdListErr_t StdListInsertBefore(StdListData_t* list_data,
 
 //------------------------------------------------------------------------------------------
 
-StdListErr_t StdListDtor(StdListData_t* list_data)
+StdListErr_t StdListDtor(StdList_t* list)
 {
     DPRINTF("> Start StdListDtor()\n");
 
-    if (list_data == NULL)
+    if (list == NULL)
     {
         PRINTERR("STD_LIST_CTX_NULL");
         return STD_LIST_CTX_NULL;
     }
 
-    StdNode_t* node = list_data->head;
+    StdNode_t* node = list->head;
     StdNode_t* next = NULL;
 
-    while (next != list_data->head)
+    while (next != list->head)
     {
         DPRINTF("free node at %p with value = " SPEC ";\n", node, (*node).value);
         next = node->next;

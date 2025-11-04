@@ -245,6 +245,7 @@ int ProcessUncrossedLimitsEdge(int     pos,
     DPRINTF("next.prev = %d\n", list->data[next].prev);
 
     if (list->data[next].prev < (int) list->capacity &&
+        list->data[next].prev > 0                    &&
         list->data[list->data[next].prev].next != next)
     {
         MakeDefaultNode(next, "#530000", "#FFC0C0", "#400000", NULL, list, fp);

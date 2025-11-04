@@ -31,12 +31,12 @@ typedef struct StdNode
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
-typedef struct StdListData
+typedef struct StdList
 {
     StdNode_t* head;
     StdNode_t* tail;
     size_t     size;
-} StdListData_t;
+} StdList_t;
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
