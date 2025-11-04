@@ -18,16 +18,16 @@ CXXFLAGS = -D _DEBUG -ggdb3 -std=c++17 -O0 -Wall -Wextra -Weffc++ 				 		   		 \
 
 CXXFLAGS += -I include
 
-AOSFLAGS = -I include/AoS
+AOSFLAGS = -I include/AoS -D AOS_LIST
 
-STDFLAGS = -I include/std
+STDFLAGS = -I include/std -D STD_LIST
 
 ifdef DEBUG
-AOSFLAGS += -D LIST_DEBUG -D AOS_LIST
+AOSFLAGS += -D LIST_DEBUG
 endif
 
 ifdef DEBUG
-STDFLAGS += -D STD_LIST_DEBUG -D STD_LIST
+STDFLAGS += -D STD_LIST_DEBUG
 endif
 
 SOURCES = src/main.cpp \
@@ -37,9 +37,9 @@ AOSSOURCES = src/AoS/listCommands.cpp  \
 		  	 src/AoS/listDebug.cpp	   \
 		  	 src/AoS/listGraph.cpp
 
-STDSOURCES = src/std/stdListCommands.cpp   \
-			 src/std/stdListDebug.cpp	   \
-		     src/std/stdListGraph.cpp
+STDSOURCES = src/std/stdListCommands.cpp
+# 			 src/std/stdListDebug.cpp	   \
+# 		     src/std/stdListGraph.cpp
 
 EXECUTABLE = run
 

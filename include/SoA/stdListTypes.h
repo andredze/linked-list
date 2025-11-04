@@ -24,26 +24,28 @@ const elem_t STD_LIST_POISON = 0xAB0BA;
 
 typedef struct StdNode
 {
-    struct StdNode* prev;
-    elem_t     value;
-    struct StdNode* next;
+    elem_t value;
+    int    next;
+    int    prev;
 } StdNode_t;
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
-typedef struct StdListData
+typedef struct StdList
 {
-    StdNode_t* head;
-    StdNode_t* tail;
-    size_t     size;
-} StdListData_t;
+    StdNode_t*  data;
+    size_t   capacity;
+    size_t   size;
+    int      free;
+    int      do_linear_realloc;
+    int      is_sorted;
+} StdList_t;
 
 //——————————————————————————————————————————————————————————————————————————————————————————
 
 typedef enum StdListErr
 {
     STD_LIST_SUCCESS,
-    STD_LIST_NULL_NODE,
     STD_LIST_DUMP_ERROR,
     STD_LIST_CALLOC_ERROR,
     STD_LIST_DATA_REALLOC_ERROR,
@@ -91,7 +93,6 @@ typedef enum StdListErr
 const char* const STD_LIST_STR_ERRORS[] =
 {
     [STD_LIST_SUCCESS]               = "STD_LIST_SUCCESS",
-    [STD_LIST_NULL_NODE]             = "STD_LIST_NULL_NODE",
     [STD_LIST_DUMP_ERROR]            = "STD_LIST_DUMP_ERROR",
     [STD_LIST_CALLOC_ERROR]          = "STD_LIST_CALLOC_ERROR",
     [STD_LIST_DATA_REALLOC_ERROR]    = "STD_LIST_DATA_REALLOC_ERROR",
