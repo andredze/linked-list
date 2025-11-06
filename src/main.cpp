@@ -68,10 +68,15 @@ int main()
         for (int i = 0; i < 10000; i++)
         {
             if (StdListInsertBefore(&std_list, insert_node, 100, &new_ins_node))
+            {
+                StdListDtor(&std_list);
                 return EXIT_FAILURE;
-
+            }
             if (StdListEraseElem(&std_list, new_ins_node))
+            {
+                StdListDtor(&std_list);
                 return EXIT_FAILURE;
+            }
         }
 
         if (StdListEraseElem(&std_list, insert_node))
@@ -99,7 +104,7 @@ int main()
     {
         int insert_pos = 0;
 
-        if (ListCtor(&list, 24, 1))
+        if (ListCtor(&list, 10, 1))
             break;
 
         aos_start_time = clock();
@@ -126,6 +131,9 @@ int main()
         if (ListInsertBefore(&list, insert_pos, 32, &insert_pos))
             break;
 
+        // if (ListEraseElem   (&list, insert_pos))
+        //     break;
+
         if (ListInsertAfter(&list, 0, 25, &insert_pos))
             break;
 
@@ -143,14 +151,19 @@ int main()
 
         int new_ins_pos = 0;
 
-//         for (int i = 0; i < 10000; i++)
-//         {
-//             if (ListInsertBefore(&list, insert_pos, 100, &new_ins_pos))
-//                 return EXIT_FAILURE;
-//
-//             if (ListEraseElem(&list, new_ins_pos))
-//                 return EXIT_FAILURE;
-//         }
+        for (int i = 0; i < 10000; i++)
+        {
+            if (ListInsertBefore(&list, insert_pos, 100, &new_ins_pos))
+            {
+                ListDtor(&list);
+                return EXIT_FAILURE;
+            }
+            if (ListEraseElem(&list, new_ins_pos))
+            {
+                ListDtor(&list);
+                return EXIT_FAILURE;
+            }
+        }
 
         if (ListEraseElem(&list, insert_pos))
             break;

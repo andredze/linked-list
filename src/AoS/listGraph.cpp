@@ -26,7 +26,7 @@ ListErr_t ListCreateDumpGraph(List_t* list,
     char filename[MAX_FILENAME_LEN] = {};
 
     sprintf(filename, "%s/%s.dot", dot_dir, image_name);
-
+    
     FILE* fp = fopen(filename, "w");
 
     if (fp == NULL)

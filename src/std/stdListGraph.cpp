@@ -53,12 +53,9 @@ StdListErr_t StdListCreateDumpGraph(StdList_t* list,
     MakeStdListNodes(list, fp);
 
     /* make all edges */
-    StdNode_t* next = NULL;
-
-    for (StdNode_t* node = list->root; next != list->root; node = next)
+    for (StdNode_t* node = list->root->next; node != list->root && node != NULL; node = node->next)
     {
         MakeStdListEdge(node, list, fp);
-        next = node->next;
     }
 
     MakeStdListHeadTail(list, fp);
@@ -81,34 +78,74 @@ int MakeStdListNodes(StdList_t* list,
     /* place all nodes in one rank */
     fprintf(fp, "\t{ rank=same; ");
 
-    StdNode_t* next = NULL;
+    StdNode_t** nodes = (StdNode_t**) calloc(list->size + 1, sizeof(StdNode_t*));
 
-    for (StdNode_t* node = list->root; next != list->root; node = next)
+    if (nodes == NULL)
     {
-        fprintf(fp, "node%p; ", node);
-        next = node->next;
+        return STD_LIST_CALLOC_ERROR;
     }
-    next = NULL;
+
+    int ind = 0;
+
+    nodes[ind++] = list->root;
+
+    for (StdNode_t* node = list->root->next; node != list->root && node != NULL; node = node->next)
+    {
+        nodes[ind++] = node;
+    }
+
+    qsort(nodes, list->size + 1, sizeof(StdNode_t*), ComparePtrs);
+
+    for (size_t i = 0; i < list->size + 1; i++)
+    {
+        DPRINTF("nodes[%zu] = %p;\n", i, nodes[i]);
+    }
+
+    for (size_t i = 0; i < list->size + 1; i++)
+    {
+        fprintf(fp, "node%p; ", nodes[i]);
+    }
 
     fprintf(fp, "}\n");
 
     /* Create invisible edges for all nodes */
-    for (StdNode_t* node = list->root; next != list->root; node = next)
+    for (size_t i = 0; i < list->size; i++)
     {
-        next = node->next;
-        MakeStdListDefaultEdge(node, next, NULL, NULL, NULL, "invis", NULL, NULL, fp);
+        MakeStdListDefaultEdge(nodes[i], nodes[i + 1], NULL, NULL, NULL, "invis", NULL, NULL, fp);
     }
-    next = NULL;
 
     MakeStdListDefaultNode(list->root, "#3E3A22", "#ecede8", "#3E3A22", "record", list, fp);
 
-    for (StdNode_t* node = list->root; next != list->root; node = next)
+    for (size_t i = 1; i < list->size + 1; i++)
     {
-        MakeStdListDefaultNode(node, NULL, NULL, NULL, NULL, list, fp);
-        next = node->next;
+        MakeStdListDefaultNode(nodes[i], NULL, NULL, NULL, NULL, list, fp);
     }
 
+    free(nodes);
+
     return 0;
+}
+
+//------------------------------------------------------------------------------------------
+
+int ComparePtrs(const void* par1, const void* par2)
+{
+    assert(par1 != NULL);
+    assert(par2 != NULL);
+
+    const int* ptr1 = *(const int* const*) par1;
+    const int* ptr2 = *(const int* const*) par2;
+
+    if (ptr1 < ptr2)
+    {
+        return -1;
+    }
+    else if (ptr1 == ptr2)
+    {
+        return 0;
+    }
+
+    return 1;
 }
 
 //------------------------------------------------------------------------------------------

@@ -22,6 +22,8 @@ int MakeStdListNodes(
     StdList_t* list,
     FILE*   fp);
 
+int ComparePtrs(const void* par1, const void* par2);
+
 int MakeStdListEdge(StdNode_t* node,
                     StdList_t* list,
                     FILE*      fp);
