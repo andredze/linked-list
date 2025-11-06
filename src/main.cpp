@@ -6,6 +6,7 @@
     #include "stdListCommands.h"
     #include "stdListDebug.h"
 #endif
+
 #include "common.h"
 #include <time.h>
 
@@ -17,138 +18,160 @@ int main()
 
 #ifdef STD_LIST
 
-    clock_t std_start_time = clock();
+    StdList_t std_list = {};
 
-    StdList_t std_list_data = {};
+    clock_t std_start_time = 0;
+    clock_t std_end_time   = 0;
 
-    BEGIN
+    do
+    {
+        StdNode_t* insert_node = NULL;
+        StdNode_t* root_node   = NULL;
 
-    StdNode_t* insert_node = NULL;
-    StdNode_t* head_node   = NULL;
+        if (StdListCtor (&std_list, &root_node))
+            break;
 
-    if (StdListCtor (&std_list_data, &head_node))
-        break;
+        std_start_time = clock();
 
-    if (StdListInsertAfter (&std_list_data, head_node,   25, &insert_node))
-        break;
+        if (StdListInsertAfter (&std_list, root_node,   25, &insert_node))
+            break;
 
-    if (StdListInsertAfter (&std_list_data, insert_node, 30, &insert_node))
-        break;
+        if (StdListInsertAfter (&std_list, insert_node, 30, &insert_node))
+            break;
 
-    if (StdListInsertAfter (&std_list_data, head_node,   20, &insert_node))
-        break;
+        if (StdListInsertAfter (&std_list, root_node,   20, &insert_node))
+            break;
 
-    if (StdListInsertBefore(&std_list_data, head_node,   35, &insert_node))
-        break;
+        if (StdListInsertBefore(&std_list, root_node,   35, &insert_node))
+            break;
 
-    if (StdListInsertBefore(&std_list_data, insert_node, 32, &insert_node))
-        break;
+        if (StdListInsertBefore(&std_list, insert_node, 32, &insert_node))
+            break;
 
-    if (StdListInsertAfter (&std_list_data, head_node,   25, &insert_node))
-        break;
+        if (StdListInsertAfter (&std_list, root_node,   25, &insert_node))
+            break;
 
-    if (StdListInsertAfter (&std_list_data, insert_node, 30, &insert_node))
-        break;
+        if (StdListInsertAfter (&std_list, insert_node, 30, &insert_node))
+            break;
 
-    if (StdListInsertAfter (&std_list_data, head_node,   20, &insert_node))
-        break;
+        if (StdListInsertAfter (&std_list, root_node,   20, &insert_node))
+            break;
 
-    if (StdListInsertBefore(&std_list_data, head_node,   35, &insert_node))
-        break;
+        if (StdListInsertBefore(&std_list, root_node,   35, &insert_node))
+            break;
 
-    if (StdListInsertBefore(&std_list_data, insert_node, 1000, &insert_node))
-        break;
+        if (StdListInsertBefore(&std_list, insert_node, 1000, &insert_node))
+            break;
 
-    // for (int i = 0; i < 10000; i++)
-    // {
-    //     if (StdListInsertBefore(&std_list_data, insert_node, 100, &insert_node))
-    //         return EXIT_FAILURE;
-    // }
+        StdNode_t* new_ins_node = 0;
 
-    END;
+        for (int i = 0; i < 10000; i++)
+        {
+            if (StdListInsertBefore(&std_list, insert_node, 100, &new_ins_node))
+                return EXIT_FAILURE;
 
-    if (StdListDtor(&std_list_data))
+            if (StdListEraseElem(&std_list, new_ins_node))
+                return EXIT_FAILURE;
+        }
+
+        if (StdListEraseElem(&std_list, insert_node))
+            break;
+    }
+    while (0);
+
+
+    std_end_time = clock();
+
+    if (StdListDtor(&std_list))
     {
         return EXIT_FAILURE;
     }
 
-    clock_t std_end_time = clock();
-
 #endif
 #ifdef AOS_LIST
 
-    clock_t aos_start_time = clock();
-
     List_t list = {};
 
-    BEGIN
+    clock_t aos_start_time = 0;
+    clock_t aos_end_time   = 0;
 
-    int insert_pos = 0;
+    do
+    {
+        int insert_pos = 0;
 
-    if (ListCtor(&list, 16, 1))
-        break;
+        if (ListCtor(&list, 24, 1))
+            break;
 
-    if (ListInsertAfter(&list, 0, 25, &insert_pos))
-        break;
+        aos_start_time = clock();
 
-    if (ListInsertAfter(&list, insert_pos, 25, &insert_pos))
-        break;
+        if (ListInsertAfter(&list, 0, 25, &insert_pos))
+            break;
 
-    if (ListInsertAfter(&list, 0, 20, &insert_pos))
-        break;
+        if (ListInsertAfter(&list, insert_pos, 25, &insert_pos))
+            break;
 
-    if (ListInsertBefore(&list, 0, 35, &insert_pos))
-        break;
+        if (ListInsertAfter(&list, 0, 20, &insert_pos))
+            break;
 
+        if (ListInsertBefore(&list, 0, 35, &insert_pos))
+            break;
 
-    // list.data[2].prev = 3;
-    list.data[3].prev = 84;
+        // list.data[2].prev = 3;
+        // list.data[3].prev = 84;
 
-#ifdef LIST_DEBUG
-    ListCheck(&list, "PREV = ", "main", "main.cpp", 57, 84);
-#endif /* LIST_DEBUG */
+    #ifdef LIST_DEBUG
+        ListCheck(&list, "PREV = ", "main", "main.cpp", 57, 84);
+    #endif /* LIST_DEBUG */
 
-    if (ListInsertBefore(&list, insert_pos, 32, &insert_pos))
-        break;
+        if (ListInsertBefore(&list, insert_pos, 32, &insert_pos))
+            break;
 
-    if (ListInsertAfter(&list, 0, 25, &insert_pos))
-        break;
+        if (ListInsertAfter(&list, 0, 25, &insert_pos))
+            break;
 
-    if (ListInsertAfter(&list, insert_pos, 25, &insert_pos))
-        break;
+        if (ListInsertAfter(&list, insert_pos, 25, &insert_pos))
+            break;
 
-    if (ListInsertAfter(&list, 0, 20, &insert_pos))
-        break;
+        if (ListInsertAfter(&list, 0, 20, &insert_pos))
+            break;
 
-    if (ListInsertBefore(&list, 0, 35, &insert_pos))
-        break;
+        if (ListInsertBefore(&list, 0, 35, &insert_pos))
+            break;
 
-    if (ListInsertBefore(&list, insert_pos, 32, &insert_pos))
-        break;
+        if (ListInsertBefore(&list, insert_pos, 32, &insert_pos))
+            break;
 
-    // for (int i = 0; i < 10000; i++)
-    // {
-    //     if (ListInsertBefore(&list, insert_pos, 100, &insert_pos))
-    //         return EXIT_FAILURE;
-    // }
+        int new_ins_pos = 0;
 
-    END;
+//         for (int i = 0; i < 10000; i++)
+//         {
+//             if (ListInsertBefore(&list, insert_pos, 100, &new_ins_pos))
+//                 return EXIT_FAILURE;
+//
+//             if (ListEraseElem(&list, new_ins_pos))
+//                 return EXIT_FAILURE;
+//         }
+
+        if (ListEraseElem(&list, insert_pos))
+            break;
+    }
+    while (0);
+
+    aos_end_time = clock();
 
     if (ListDtor(&list))
     {
         return EXIT_FAILURE;
     }
 
-    clock_t aos_end_time = clock();
-
 #endif
 
 #ifdef STD_LIST
-    double std_run_time = (double) (std_end_time - std_start_time) / CLOCKS_PER_SEC;
-    printf("Standard list run time       = %lg;\n", std_run_time);
+    double std_run_time = ((double) (std_end_time - std_start_time)) / CLOCKS_PER_SEC;
+    printf("Standard list run time       = %lg;\n", (double) std_run_time);
 #endif
 #ifdef AOS_LIST
-    double aos_run_time = (double) (aos_end_time - aos_start_time) / CLOCKS_PER_SEC;
+    double aos_run_time = ((double) (aos_end_time - aos_start_time)) / CLOCKS_PER_SEC;
     printf("Array of structures run time = %lg;\n", aos_run_time);
 #endif
 

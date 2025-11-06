@@ -9,8 +9,10 @@ static ListErr_t ListInsert(List_t* list,
 
 static ListErr_t ListCheckPos(List_t* list, int pos);
 
-static ListErr_t ListRealloc       (List_t* list);
-static ListErr_t ListReallocLinear (List_t* list);
+static ListErr_t ListRealloc            (List_t* list);
+static ListErr_t ListReallocUpLinear    (List_t* list);
+static ListErr_t ListReallocDownLinear  (List_t* list);
+static ListErr_t ListReallocLinear      (List_t* list, size_t capacity);
 
 //------------------------------------------------------------------------------------------
 
@@ -163,14 +165,13 @@ static ListErr_t ListInsert(List_t* list,
                             elem_t  value,
                             int*    insert_pos)
 {
-    assert(list       != NULL);
-    assert(insert_pos != NULL);
+    assert(list != NULL);
 
     ListErr_t error = LIST_SUCCESS;
 
     if (list->free == -1)
     {
-        error = list->do_linear_realloc ? ListReallocLinear(list) : ListRealloc(list);
+        error = list->do_linear_realloc ? ListReallocUpLinear(list) : ListRealloc(list);
         if (error != LIST_SUCCESS)
         {
             return error;
@@ -199,7 +200,10 @@ static ListErr_t ListInsert(List_t* list,
     list->data[cur_index].value = value;
     list->data[cur_index].next  = pos_next;
 
-    *insert_pos = cur_index;
+    if (insert_pos != NULL)
+    {
+        *insert_pos = cur_index;
+    }
 
     list->size++;
 
@@ -249,13 +253,51 @@ static ListErr_t ListRealloc(List_t* list)
 
 //------------------------------------------------------------------------------------------
 
-static ListErr_t ListReallocLinear(List_t* list)
+static ListErr_t ListReallocDownLinear(List_t* list)
+{
+    DPRINTF("\t> Start ListReallocDownLinear()\n");
+
+    DEBUG_LIST_CHECK(list, "REALLOC_LINEAR_DOWN_START_OLDCAP=", (int) list->capacity);
+
+    size_t capacity = list->capacity / 2 + 1;
+
+    ListErr_t error = LIST_SUCCESS;
+    if ((error = ListReallocLinear(list, capacity)))
+    {
+        return error;
+    }
+
+    DEBUG_LIST_CHECK(list, "REALLOC_LINEAR_DOWN_END_OLDCAP=", (int) list->capacity);
+
+    return LIST_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------
+
+static ListErr_t ListReallocUpLinear(List_t* list)
+{
+    DPRINTF("\t> Start ListReallocUpLinear()\n");
+
+    DEBUG_LIST_CHECK(list, "REALLOC_LINEAR_UP_START_OLDCAP=", (int) list->capacity);
+
+    size_t capacity = list->capacity * 2 + 1;
+
+    ListErr_t error = LIST_SUCCESS;
+    if ((error = ListReallocLinear(list, capacity)))
+    {
+        return error;
+    }
+
+    DEBUG_LIST_CHECK(list, "REALLOC_LINEAR_UP_END_OLDCAP=", (int) list->capacity);
+
+    return LIST_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------
+
+static ListErr_t ListReallocLinear(List_t* list, size_t capacity)
 {
     DPRINTF("\t> Start ListReallocLinear()\n");
-
-    DEBUG_LIST_CHECK(list, "REALLOC_LINEAR_START_OLDCAP=", (int) list->capacity);
-
-    size_t  capacity = list->capacity * 2 + 1;
 
     Node_t* new_data = (Node_t*) calloc(capacity, sizeof(list->data[0]));
 
@@ -298,8 +340,6 @@ static ListErr_t ListReallocLinear(List_t* list)
     list->data      = new_data;
     list->is_sorted = 1;
 
-    DEBUG_LIST_CHECK(list, "REALLOC_LINEAR_END_OLDCAP=", (int) list->capacity);
-
     DPRINTF("\t> End   ListReallocLinear\n");
 
     return LIST_SUCCESS;
@@ -307,7 +347,7 @@ static ListErr_t ListReallocLinear(List_t* list)
 
 //------------------------------------------------------------------------------------------
 
-ListErr_t ListErase(List_t* list, int pos)
+ListErr_t ListEraseElem(List_t* list, int pos)
 {
     DPRINTF("> Start ListErase(pos = %d)\n", pos);
 
@@ -350,6 +390,15 @@ ListErr_t ListErase(List_t* list, int pos)
 
     list->size--;
 
+    if (list->do_linear_realloc && list->size < list->capacity / 2)
+    {
+        error = LIST_SUCCESS;
+        if ((error = ListReallocDownLinear(list)))
+        {
+            return error;
+        }
+    }
+
     DEBUG_LIST_CHECK(list, "END_ERASE_", pos);
 
     LIST_CALL_DUMP(list, "erase", "DUMP_ERASE_", pos);
@@ -369,10 +418,6 @@ ListErr_t ListGetHead(List_t* list, int* head)
 
     *head = list->data[0].next;
 
-    DEBUG_LIST_CHECK(list, "END_GET_HEAD_IND=", *head);
-
-    LIST_CALL_DUMP(list, "get_head", "END_GET_HEAD_IND=", *head);
-
     DPRINTF("> End   ListGetHead\n");
 
     return LIST_SUCCESS;
@@ -387,10 +432,6 @@ ListErr_t ListGetTail(List_t* list, int* tail)
     DEBUG_LIST_CHECK(list, "START_GET_TAIL_", 0);
 
     *tail = list->data[0].prev;
-
-    DEBUG_LIST_CHECK(list, "END_GET_TAIL_IND=", *tail);
-
-    LIST_CALL_DUMP(list, "get_tail", "END_GET_TAIL_IND=", *tail);
 
     DPRINTF("> End   ListGetTail\n");
 
@@ -412,10 +453,6 @@ ListErr_t ListGetValue(List_t* list, int pos, elem_t* value)
     }
 
     *value = list->data[pos].value;
-
-    DEBUG_LIST_CHECK(list, "END_GET_VALUE_IND=", pos);
-
-    LIST_CALL_DUMP(list, "get_value", "END_GET_VALUE_IND=", pos);
 
     DPRINTF("> End   ListGetValue\n");
 

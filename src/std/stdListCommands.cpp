@@ -2,10 +2,8 @@
 
 //------------------------------------------------------------------------------------------
 
-StdListErr_t StdListCtor(StdList_t* list, StdNode_t** head_node)
+StdListErr_t StdListCtor(StdList_t* list, StdNode_t** root_node)
 {
-    assert(head_node != NULL);
-
     DPRINTF("> Start StdListCtor()\n");
 
     if (list == NULL)
@@ -29,9 +27,12 @@ StdListErr_t StdListCtor(StdList_t* list, StdNode_t** head_node)
     (*list->root).next  = list->root;
     (*list->root).prev  = list->root;
 
-    *head_node = list->root;
+    if (root_node != NULL)
+    {
+        *root_node = list->root;
+    }
 
-    // STD_LIST_CALL_DUMP(list, "ctor", "DUMP_CTOR_CAP=");
+    STD_LIST_CALL_DUMP(list, "ctor", "DUMP_CTOR_CAP=", 0);
 
     DPRINTF("> End   StdListCtor\n\n");
 
@@ -45,12 +46,11 @@ StdListErr_t StdListInsertAfter(StdList_t*  list,
                                 elem_t      value,
                                 StdNode_t** insert_node)
 {
-    assert(list        != NULL);
-    assert(insert_node != NULL);
+    assert(list != NULL);
 
     DPRINTF("> Start StdListInsertAfter(node = %p, value = " SPEC ")\n", node, value);
 
-    // DEBUG_STD_LIST_CHECK(list, "START_INSERT_AFTER_", 0);
+    DEBUG_STD_LIST_CHECK(list, "START_INSERT_AFTER_", 0);
 
     if (node == NULL)
     {
@@ -72,11 +72,14 @@ StdListErr_t StdListInsertAfter(StdList_t*  list,
     (*node->next).prev = new_node;
     node->next         = new_node;
 
-    *insert_node = new_node;
+    if (insert_node != NULL)
+    {
+        *insert_node = new_node;
+    }
 
     list->size++;
 
-    // DEBUG_STD_LIST_CHECK(list, "END_INSERT_AFTER_", pos);
+    DEBUG_STD_LIST_CHECK(list, "END_INSERT_AFTER_", 0);
 
     STD_LIST_CALL_DUMP(list, "insert", "DUMP_INSERT_AFTER_", (size_t) node);
 
@@ -108,11 +111,11 @@ StdListErr_t StdListInsertBefore(StdList_t*  list,
 
 //------------------------------------------------------------------------------------------
 
-StdListErr_t StdListErase(StdList_t* list, StdNode_t* node)
+StdListErr_t StdListEraseElem(StdList_t* list, StdNode_t* node)
 {
     DPRINTF("> Start StdListErase(node = %p)\n", node);
 
-    // DEBUG_STD_LIST_CHECK(list, "START_ERASE_", pos);
+    DEBUG_STD_LIST_CHECK(list, "START_ERASE_", 0);
 
     if (node == NULL)
     {
@@ -133,9 +136,9 @@ StdListErr_t StdListErase(StdList_t* list, StdNode_t* node)
 
     list->size--;
 
-    // DEBUG_STD_LIST_CHECK(list, "END_ERASE_", pos);
+    DEBUG_STD_LIST_CHECK(list, "END_ERASE_", 0);
 
-    // STD_LIST_CALL_DUMP(list, "erase", "DUMP_ERASE_", pos);
+    STD_LIST_CALL_DUMP(list, "erase", "DUMP_ERASE_", 0);
 
     DPRINTF("> End   StdListErase\n\n");
 
@@ -152,10 +155,6 @@ StdListErr_t StdListGetHead(StdList_t* list, StdNode_t** head)
 
     *head = list->root->next;
 
-    DEBUG_STD_LIST_CHECK(list, "END_GET_HEAD_", 0);
-
-    STD_LIST_CALL_DUMP(list, "get_head", "END_GET_HEAD_", 0);
-
     DPRINTF("> End   StdListGetHead\n");
 
     return STD_LIST_SUCCESS;
@@ -170,10 +169,6 @@ StdListErr_t StdListGetTail(StdList_t* list, StdNode_t** tail)
     DEBUG_STD_LIST_CHECK(list, "START_GET_TAIL_", 0);
 
     *tail = list->root->prev;
-
-    DEBUG_STD_LIST_CHECK(list, "END_GET_TAIL_", 0);
-
-    STD_LIST_CALL_DUMP(list, "get_tail", "END_GET_TAIL_", 0);
 
     DPRINTF("> End   StdListGetTail\n");
 
@@ -195,10 +190,6 @@ StdListErr_t StdListGetValue(StdList_t* list, StdNode_t* node, elem_t* value)
     }
 
     *value = node->value;
-
-    DEBUG_STD_LIST_CHECK(list, "END_GET_VALUE_", 0);
-
-    STD_LIST_CALL_DUMP(list, "get_value", "END_GET_VALUE_", 0);
 
     DPRINTF("> End   StdListGetValue\n");
 

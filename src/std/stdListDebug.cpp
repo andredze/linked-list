@@ -4,20 +4,20 @@
 
 //==========================================================================================
 
-StdListErr_t StdListCheck(StdList_t* list,
-                          const char*    message,
-                          const char*    func,
-                          const char*    file,
-                          int            line,
-                          size_t            arg)
+StdListErr_t StdListCheck(StdList_t*  list,
+                          const char* message,
+                          const char* func,
+                          const char* file,
+                          int         line,
+                          size_t      arg)
 {
     StdListErr_t verify_status = STD_LIST_SUCCESS;
     if ((verify_status = StdListVerify(list)))
     {
         PRINTERR("%s (StdListVerify not passed! Check \"list_log.htm\")",
-                    STD_LIST_STR_ERRORS[verify_status]);
+                 STD_LIST_STR_ERRORS[verify_status]);
         StdListDumpInfo_t dump_info = {verify_status, "error_dump", message,
-                                    func, file, line, arg};
+                                       func, file, line, arg};
 
         if (StdListDump(list, &dump_info))
         {
@@ -56,6 +56,7 @@ StdListErr_t StdListVerify(StdList_t* list)
 
     if (next_count != list->size)
     {
+        DPRINTF("next_count = %zu;\nsize = %zu;\n", next_count, list->size);
         return STD_LIST_SIZE_IS_WRONG;
     }
 
@@ -69,10 +70,15 @@ StdListErr_t StdListVerifyNext(StdList_t* list, size_t* next_count_ptr)
     assert(list       != NULL);
     assert(list->root != NULL);
 
+    if (list->root->next == NULL)
+    {
+        return STD_LIST_SUCCESS;
+    }
+
     StdNode_t** next_nodes = (StdNode_t**) calloc(list->size, sizeof(StdNode_t*));
     size_t      next_count = 0;
 
-    for (StdNode_t* node = list->root; node != list->root; node = node->next)
+    for (StdNode_t* node = list->root->next; node != list->root; node = node->next)
     {
         for (size_t i = 0; i < next_count; i++)
         {
