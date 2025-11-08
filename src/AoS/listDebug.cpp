@@ -76,10 +76,6 @@ ListErr_t ListVerify(List_t* list)
     {
         return LIST_FLAG_IS_WRONG;
     }
-    if (list->do_linear_realloc != 0 && list->do_linear_realloc != 1)
-    {
-        return LIST_FLAG_IS_WRONG;
-    }
 
     size_t next_count = 0;
     size_t prev_count = 0;
@@ -395,12 +391,10 @@ int ListDumpStruct(List_t* list, ListDumpInfo_t* dump_info, FILE* fp)
         return 0;
     }
 
-    fprintf(fp, "do_linear_realloc = %d;\n"
-                "is_sorted = %d;\n"
+    fprintf(fp, "is_sorted = %d;\n"
                 "capacity  = %zu;\n"
                 "size = %zu;\n"
                 "free = %d;\n",
-                list->do_linear_realloc,
                 list->is_sorted,
                 list->capacity,
                 list->size,

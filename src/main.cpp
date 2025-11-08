@@ -84,7 +84,6 @@ int main()
     }
     while (0);
 
-
     std_end_time = clock();
 
     if (StdListDtor(&std_list))
@@ -104,7 +103,7 @@ int main()
     {
         int insert_pos = 0;
 
-        if (ListCtor(&list, 10, 1))
+        if (ListCtor(&list, 10))
             break;
 
         aos_start_time = clock();
@@ -149,23 +148,26 @@ int main()
         if (ListInsertBefore(&list, insert_pos, 32, &insert_pos))
             break;
 
-        int new_ins_pos = 0;
+        // int new_ins_pos = 0;
 
-        for (int i = 0; i < 10000; i++)
-        {
-            if (ListInsertBefore(&list, insert_pos, 100, &new_ins_pos))
-            {
-                ListDtor(&list);
-                return EXIT_FAILURE;
-            }
-            if (ListEraseElem(&list, new_ins_pos))
-            {
-                ListDtor(&list);
-                return EXIT_FAILURE;
-            }
-        }
+        // for (int i = 0; i < 10000; i++)
+        // {
+        //     if (ListInsertBefore(&list, insert_pos, 100, &new_ins_pos))
+        //     {
+        //         ListDtor(&list);
+        //         return EXIT_FAILURE;
+        //     }
+        //     if (ListEraseElem(&list, new_ins_pos))
+        //     {
+        //         ListDtor(&list);
+        //         return EXIT_FAILURE;
+        //     }
+        // }
 
         if (ListEraseElem(&list, insert_pos))
+            break;
+
+        if (ListReallocDownLinear(&list))
             break;
     }
     while (0);

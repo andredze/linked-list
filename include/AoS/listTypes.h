@@ -37,7 +37,6 @@ typedef struct List
     size_t   capacity;
     size_t   size;
     int      free;
-    int      do_linear_realloc;
     int      is_sorted;
 } List_t;
 

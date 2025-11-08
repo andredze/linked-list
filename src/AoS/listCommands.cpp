@@ -10,13 +10,11 @@ static ListErr_t ListInsert(List_t* list,
 static ListErr_t ListCheckPos(List_t* list, int pos);
 
 static ListErr_t ListRealloc            (List_t* list);
-static ListErr_t ListReallocUpLinear    (List_t* list);
-static ListErr_t ListReallocDownLinear  (List_t* list);
 static ListErr_t ListReallocLinear      (List_t* list, size_t capacity);
 
 //------------------------------------------------------------------------------------------
 
-ListErr_t ListCtor(List_t* list, size_t capacity, int do_linear_realloc)
+ListErr_t ListCtor(List_t* list, size_t capacity)
 {
     DPRINTF("> Start ListCtor(capacity = %zu)\n", capacity);
 
@@ -44,8 +42,7 @@ ListErr_t ListCtor(List_t* list, size_t capacity, int do_linear_realloc)
         return LIST_CALLOC_ERROR;
     }
 
-    list->do_linear_realloc = do_linear_realloc;
-    list->is_sorted         = 1;
+    list->is_sorted = 1;
 
     list->capacity = capacity;
     list->size     = 0;
@@ -171,8 +168,7 @@ static ListErr_t ListInsert(List_t* list,
 
     if (list->free == -1)
     {
-        error = list->do_linear_realloc ? ListReallocUpLinear(list) : ListRealloc(list);
-        if (error != LIST_SUCCESS)
+        if ((error = ListRealloc(list)))
         {
             return error;
         }
@@ -228,10 +224,11 @@ static ListErr_t ListRealloc(List_t* list)
         return LIST_DATA_REALLOC_ERROR;
     }
 
-    list->capacity = capacity;
     list->data     = new_data;
 
     list->free = (int) list->capacity;
+
+    list->capacity = capacity;
 
     /* Filling the free list */
     for (int i = list->free; i < (int) list->capacity; i++)
@@ -253,11 +250,17 @@ static ListErr_t ListRealloc(List_t* list)
 
 //------------------------------------------------------------------------------------------
 
-static ListErr_t ListReallocDownLinear(List_t* list)
+ListErr_t ListReallocDownLinear(List_t* list)
 {
     DPRINTF("\t> Start ListReallocDownLinear()\n");
 
     DEBUG_LIST_CHECK(list, "REALLOC_LINEAR_DOWN_START_OLDCAP=", (int) list->capacity);
+
+    if (list->size >= list->capacity / 2)
+    {
+        printf("List is not large enough for realloc down\n");
+        return LIST_SUCCESS;
+    }
 
     size_t capacity = list->capacity / 2 + 1;
 
@@ -269,12 +272,14 @@ static ListErr_t ListReallocDownLinear(List_t* list)
 
     DEBUG_LIST_CHECK(list, "REALLOC_LINEAR_DOWN_END_OLDCAP=", (int) list->capacity);
 
+    LIST_CALL_DUMP(list, "realloc_down", "REALLOC_LINEAR_DOWN_", (int) list->capacity);
+
     return LIST_SUCCESS;
 }
 
 //------------------------------------------------------------------------------------------
 
-static ListErr_t ListReallocUpLinear(List_t* list)
+ListErr_t ListReallocUpLinear(List_t* list)
 {
     DPRINTF("\t> Start ListReallocUpLinear()\n");
 
@@ -289,6 +294,8 @@ static ListErr_t ListReallocUpLinear(List_t* list)
     }
 
     DEBUG_LIST_CHECK(list, "REALLOC_LINEAR_UP_END_OLDCAP=", (int) list->capacity);
+
+    LIST_CALL_DUMP(list, "realloc_up", "REALLOC_LINEAR_UP_", (int) list->capacity);
 
     return LIST_SUCCESS;
 }
@@ -389,15 +396,6 @@ ListErr_t ListEraseElem(List_t* list, int pos)
     list->data[next_ind].prev = prev_ind;
 
     list->size--;
-
-    if (list->do_linear_realloc && list->size < list->capacity / 2)
-    {
-        error = LIST_SUCCESS;
-        if ((error = ListReallocDownLinear(list)))
-        {
-            return error;
-        }
-    }
 
     DEBUG_LIST_CHECK(list, "END_ERASE_", pos);
 

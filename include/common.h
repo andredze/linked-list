@@ -31,7 +31,7 @@
             fprintf(stderr, YELLOW text RESET_CLR, ##__VA_ARGS__);      \
             END
 #else
-    #define DPRINTF(...) ;
+    #define DPRINTF(...) ;      
 #endif /* LIST_DEBUG */
 
 //——————————————————————————————————————————————————————————————————————————————————————————
