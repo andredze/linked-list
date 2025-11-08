@@ -5,24 +5,29 @@
 //==========================================================================================
 
 ListErr_t ListCheck(List_t*     list,
-                    const char* message,
                     const char* func,
                     const char* file,
                     int         line,
-                    int         arg)
+                    const char* fmt,
+                    ...)
 {
     ListErr_t verify_status = LIST_SUCCESS;
+
     if ((verify_status = ListVerify(list)))
     {
-        PRINTERR("%s (ListVerify not passed! Check \"list_log.htm\")",
-                    LIST_STR_ERRORS[verify_status]);
-        ListDumpInfo_t dump_info = {verify_status, "error_dump", message,
-                                    func, file, line, arg};
+        PRINTERR("%s (ListVerify not passed! Check \"list_log.html\")", LIST_STR_ERRORS[verify_status]);
 
-        if (ListDump(list, &dump_info))
+        ListDumpInfo_t check_dump_info = {verify_status, "error_dump", func, file, line};
+
+        va_list args = {};
+        va_start(args, fmt);
+
+        if (vListDump(list, &check_dump_info, fmt, args))
         {
             return LIST_DUMP_ERROR;
         }
+
+        va_end(args);
     }
 
     return verify_status;
@@ -266,7 +271,10 @@ ListErr_t ListVerifyFree(List_t* list, size_t* free_count_ptr)
 
 //------------------------------------------------------------------------------------------
 
-ListErr_t ListDump(List_t* list, ListDumpInfo_t* dump_info)
+ListErr_t vListDump(List_t*         list,
+                    ListDumpInfo_t* dump_info,
+                    const char*     fmt,
+                    va_list         args)
 {
     static int calls_count = 1;
 
@@ -292,9 +300,15 @@ ListErr_t ListDump(List_t* list, ListDumpInfo_t* dump_info)
 
     calls_count++;
 
-    fprintf(fp, "<pre>\n<h3><font color=blue>%s%d</font></h3>",
-                dump_info->reason,
-                dump_info->command_arg);
+//     fprintf(fp, "<pre>\n<h3><font color=blue>%s%d</font></h3>",
+//                 dump_info->reason,
+//                 dump_info->command_arg);
+
+    fprintf(fp, "<pre>\n<h3><font color=blue>");
+
+    vfprintf(fp, fmt, args);
+
+    fprintf(fp, "</font></h3>");
 
     fprintf(fp, dump_info->error == LIST_SUCCESS ?
                 "<font color=green><b>" :
@@ -337,6 +351,22 @@ ListErr_t ListDump(List_t* list, ListDumpInfo_t* dump_info)
     fclose(fp);
 
     return LIST_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------
+
+ListErr_t ListDump (List_t*         list,
+                    ListDumpInfo_t* dump_info,
+                    const char*     fmt, ...)
+{
+    va_list args = {};
+    va_start(args, fmt);
+
+    ListErr_t status = vListDump(list, dump_info, fmt, args);
+
+    va_end(args);
+
+    return status;
 }
 
 //------------------------------------------------------------------------------------------

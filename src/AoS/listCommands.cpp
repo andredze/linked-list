@@ -64,7 +64,7 @@ ListErr_t ListCtor(List_t* list, size_t capacity)
     /* Last free element addresses to null */
     list->data[capacity - 1].next = -1;
 
-    LIST_CALL_DUMP(list, "ctor", "DUMP_CTOR_CAP=", (int) capacity);
+    LIST_CALL_DUMP(list, "ctor", "DUMP AFTER CTOR, CAPACITY = %zu", capacity);
 
     DPRINTF("> End   ListCtor\n\n");
 
@@ -104,7 +104,7 @@ ListErr_t ListInsertAfter(List_t* list, int pos, elem_t value, int* insert_pos)
 {
     DPRINTF("> Start ListInsertAfter(pos = %d, value = " SPEC ")\n", pos, value);
 
-    DEBUG_LIST_CHECK(list, "START_INSERT_AFTER_", pos);
+    DEBUG_LIST_CHECK(list, "ERROR DUMP AT START OF INSERT AFTER pos = %d", pos);
 
     ListErr_t error = LIST_SUCCESS;
     if ((error = ListCheckPos(list, pos)) != LIST_SUCCESS)
@@ -117,9 +117,9 @@ ListErr_t ListInsertAfter(List_t* list, int pos, elem_t value, int* insert_pos)
         return error;
     }
 
-    DEBUG_LIST_CHECK(list, "END_INSERT_AFTER_", pos);
+    DEBUG_LIST_CHECK(list, "ERROR DUMP AT END OF INSERT AFTER pos = %d", pos);
 
-    LIST_CALL_DUMP(list, "insert", "DUMP_INSERT_AFTER_", pos);
+    LIST_CALL_DUMP(list, "insert", "DUMP AT END OF INSERT_AFTER pos=%d (value=" SPEC ")", pos, value);
 
     DPRINTF("> End   ListInsertAfter\n\n");
 
@@ -132,7 +132,7 @@ ListErr_t ListInsertBefore(List_t* list, int pos, elem_t value, int* insert_pos)
 {
     DPRINTF("> Start ListInsertBefore(pos = %d, value = " SPEC ")\n", pos, value);
 
-    DEBUG_LIST_CHECK(list, "START_INSERT_BEFORE_", pos);
+    DEBUG_LIST_CHECK(list, "ERROR DUMP AT START OF INSERT BEFORE pos = %d", pos);
 
     ListErr_t error = LIST_SUCCESS;
     if ((error = ListCheckPos(list, pos)) != LIST_SUCCESS)
@@ -146,9 +146,9 @@ ListErr_t ListInsertBefore(List_t* list, int pos, elem_t value, int* insert_pos)
         return error;
     }
 
-    DEBUG_LIST_CHECK(list, "END_INSERT_BEFORE_", pos);
+    DEBUG_LIST_CHECK(list, "ERROR DUMP AT END OF INSERT BEFORE pos = %d", pos);
 
-    LIST_CALL_DUMP(list, "insert", "DUMP_INSERT_BEFORE_", pos);
+    LIST_CALL_DUMP(list, "insert", "DUMP AT END OF INSERT_BEFORE pos=%d (value=" SPEC ")", pos, value);
 
     DPRINTF("> End   ListInsertBefore\n\n");
 
@@ -212,7 +212,7 @@ static ListErr_t ListRealloc(List_t* list)
 {
     DPRINTF("\t> Start ListRealloc()\n");
 
-    DEBUG_LIST_CHECK(list, "REALLOC_START_OLDCAP=", (int) list->capacity);
+    DEBUG_LIST_CHECK(list, "ERROR DUMP AT START OF REALLOC with capacity = %zu", list->capacity);
 
     size_t  capacity = list->capacity * 2 + 1;
 
@@ -241,7 +241,7 @@ static ListErr_t ListRealloc(List_t* list)
     /* Last free element addresses to nothing */
     list->data[list->capacity - 1].next = -1;
 
-    DEBUG_LIST_CHECK(list, "REALLOC_END_OLDCAP=", (int) list->capacity);
+    DEBUG_LIST_CHECK(list, "ERROR DUMP AT END OF REALLOC with capacity = %zu", list->capacity);
 
     DPRINTF("\t> End   ListRealloc\n");
 
@@ -254,7 +254,7 @@ ListErr_t ListReallocDownLinear(List_t* list)
 {
     DPRINTF("\t> Start ListReallocDownLinear()\n");
 
-    DEBUG_LIST_CHECK(list, "REALLOC_LINEAR_DOWN_START_OLDCAP=", (int) list->capacity);
+    DEBUG_LIST_CHECK(list, "ERROR DUMP AT START OF LINEAR REALLOC DOWN with capacity = %zu", list->capacity);
 
     if (list->size >= list->capacity / 2)
     {
@@ -270,9 +270,9 @@ ListErr_t ListReallocDownLinear(List_t* list)
         return error;
     }
 
-    DEBUG_LIST_CHECK(list, "REALLOC_LINEAR_DOWN_END_OLDCAP=", (int) list->capacity);
+    DEBUG_LIST_CHECK(list, "ERROR DUMP AT END OF LINEAR REALLOC DOWN with capacity = %zu", list->capacity);
 
-    LIST_CALL_DUMP(list, "realloc_down", "REALLOC_LINEAR_DOWN_", (int) list->capacity);
+    LIST_CALL_DUMP(list, "realloc_down", "DUMP AFTER REALLOC DOWN LINEAR to capacity = %zu", list->capacity);
 
     return LIST_SUCCESS;
 }
@@ -283,7 +283,7 @@ ListErr_t ListReallocUpLinear(List_t* list)
 {
     DPRINTF("\t> Start ListReallocUpLinear()\n");
 
-    DEBUG_LIST_CHECK(list, "REALLOC_LINEAR_UP_START_OLDCAP=", (int) list->capacity);
+    DEBUG_LIST_CHECK(list, "ERROR DUMP AT START OF LINEAR REALLOC UP with capacity = %zu", list->capacity);
 
     size_t capacity = list->capacity * 2 + 1;
 
@@ -293,9 +293,9 @@ ListErr_t ListReallocUpLinear(List_t* list)
         return error;
     }
 
-    DEBUG_LIST_CHECK(list, "REALLOC_LINEAR_UP_END_OLDCAP=", (int) list->capacity);
+    DEBUG_LIST_CHECK(list, "ERROR DUMP AT END OF LINEAR REALLOC UP with capacity = %zu", list->capacity);
 
-    LIST_CALL_DUMP(list, "realloc_up", "REALLOC_LINEAR_UP_", (int) list->capacity);
+    LIST_CALL_DUMP(list, "realloc_up", "DUMP AFTER REALLOC UP LINEAR to capacity = %zu", list->capacity);
 
     return LIST_SUCCESS;
 }
@@ -358,7 +358,7 @@ ListErr_t ListEraseElem(List_t* list, int pos)
 {
     DPRINTF("> Start ListErase(pos = %d)\n", pos);
 
-    DEBUG_LIST_CHECK(list, "START_ERASE_", pos);
+    DEBUG_LIST_CHECK(list, "ERROR DUMP AT START OF ERASE pos = %d", pos);
 
     ListErr_t error = LIST_SUCCESS;
     if ((error = ListCheckPos(list, pos)) != LIST_SUCCESS)
@@ -397,9 +397,9 @@ ListErr_t ListEraseElem(List_t* list, int pos)
 
     list->size--;
 
-    DEBUG_LIST_CHECK(list, "END_ERASE_", pos);
+    DEBUG_LIST_CHECK(list, "ERROR DUMP AT END OF ERASE pos = %d", pos);
 
-    LIST_CALL_DUMP(list, "erase", "DUMP_ERASE_", pos);
+    LIST_CALL_DUMP(list, "erase", "DUMP AFTER ERASE OF ELEMENT at pos = %d", pos);
 
     DPRINTF("> End   ListErase\n\n");
 

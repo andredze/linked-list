@@ -136,11 +136,9 @@ typedef struct ListDumpInfo
 {
     ListErr_t   error;
     const char* image_name;
-    const char* reason;
     const char* func;
     const char* file;
     int         line;
-    int         command_arg;
 } ListDumpInfo_t;
 
 //——————————————————————————————————————————————————————————————————————————————————————————

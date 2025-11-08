@@ -28,10 +28,10 @@ int main()
         StdNode_t* insert_node = NULL;
         StdNode_t* root_node   = NULL;
 
+        std_start_time = clock();
+
         if (StdListCtor (&std_list, &root_node))
             break;
-
-        std_start_time = clock();
 
         if (StdListInsertAfter (&std_list, root_node,   25, &insert_node))
             break;
@@ -73,6 +73,11 @@ int main()
                 StdListDtor(&std_list);
                 return EXIT_FAILURE;
             }
+            if (StdListInsertAfter(&std_list, insert_node, 110, &new_ins_node))
+            {
+                StdListDtor(&std_list);
+                return EXIT_FAILURE;
+            }
             if (StdListEraseElem(&std_list, new_ins_node))
             {
                 StdListDtor(&std_list);
@@ -105,7 +110,7 @@ int main()
     {
         int insert_pos = 0;
 
-        if (ListCtor(&list, 10))
+        if (ListCtor(&list, 4))
             break;
 
         aos_start_time = clock();
@@ -123,11 +128,11 @@ int main()
             break;
 
     #ifdef LIST_DEBUG
-        LIST_CALL_DUMP(&list, "normal", "LIST IS NORMAL_", 0);
+        LIST_CALL_DUMP(&list, "normal", "LIST IS NORMAL");
         // list.data[2].prev = 3;
         // ListCheck(&list, "RUINED LIST (list is looped): list.data[3].prev = ", __func__, __FILE__, __LINE__, 3);
         list.data[3].prev = 84;
-        ListCheck(&list, "RUINED LIST: list.data[3].prev = ", __func__, __FILE__, __LINE__, 84);
+        ListCheck(&list, __func__, __FILE__, __LINE__, "RUINED LIST: list.data[3].prev = %d", list.data[3].prev);
         // list.size = 84;
         // ListCheck(&list, "RUINED LIST: size = ", __func__, __FILE__, __LINE__, 84);
     #endif /* LIST_DEBUG */
@@ -156,6 +161,11 @@ int main()
         for (int i = 0; i < 100000; i++)
         {
             if (ListInsertBefore(&list, insert_pos, 100, &new_ins_pos))
+            {
+                ListDtor(&list);
+                return EXIT_FAILURE;
+            }
+            if (ListInsertAfter(&list, insert_pos, 110, &new_ins_pos))
             {
                 ListDtor(&list);
                 return EXIT_FAILURE;
