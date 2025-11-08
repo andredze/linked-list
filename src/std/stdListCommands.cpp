@@ -177,7 +177,11 @@ StdListErr_t StdListGetTail(StdList_t* list, StdNode_t** tail)
 
 //------------------------------------------------------------------------------------------
 
+#ifdef STD_LIST_DEBUG
 StdListErr_t StdListGetValue(StdList_t* list, StdNode_t* node, elem_t* value)
+#else
+StdListErr_t StdListGetValue(StdNode_t* node, elem_t* value)
+#endif
 {
     DPRINTF("> Start StdListGetValue()\n");
 

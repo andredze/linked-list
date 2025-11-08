@@ -63,6 +63,7 @@ int main()
         if (StdListInsertBefore(&std_list, insert_node, 1000, &insert_node))
             break;
 
+#ifndef STD_LIST_DEBUG
         StdNode_t* new_ins_node = 0;
 
         for (int i = 0; i < 10000; i++)
@@ -78,6 +79,7 @@ int main()
                 return EXIT_FAILURE;
             }
         }
+#endif /* STD_LIST_DEBUG */
 
         if (StdListEraseElem(&std_list, insert_node))
             break;
@@ -120,18 +122,18 @@ int main()
         if (ListInsertBefore(&list, 0, 35, &insert_pos))
             break;
 
-        // list.data[2].prev = 3;
-        // list.data[3].prev = 84;
-
     #ifdef LIST_DEBUG
-        ListCheck(&list, "PREV = ", "main", "main.cpp", 57, 84);
+        LIST_CALL_DUMP(&list, "normal", "LIST IS NORMAL_", 0);
+        // list.data[2].prev = 3;
+        // ListCheck(&list, "RUINED LIST (list is looped): list.data[3].prev = ", __func__, __FILE__, __LINE__, 3);
+        list.data[3].prev = 84;
+        ListCheck(&list, "RUINED LIST: list.data[3].prev = ", __func__, __FILE__, __LINE__, 84);
+        // list.size = 84;
+        // ListCheck(&list, "RUINED LIST: size = ", __func__, __FILE__, __LINE__, 84);
     #endif /* LIST_DEBUG */
 
         if (ListInsertBefore(&list, insert_pos, 32, &insert_pos))
             break;
-
-        // if (ListEraseElem   (&list, insert_pos))
-        //     break;
 
         if (ListInsertAfter(&list, 0, 25, &insert_pos))
             break;
@@ -148,27 +150,29 @@ int main()
         if (ListInsertBefore(&list, insert_pos, 32, &insert_pos))
             break;
 
-        // int new_ins_pos = 0;
+#ifndef LIST_DEBUG
+        int new_ins_pos = 0;
 
-        // for (int i = 0; i < 10000; i++)
-        // {
-        //     if (ListInsertBefore(&list, insert_pos, 100, &new_ins_pos))
-        //     {
-        //         ListDtor(&list);
-        //         return EXIT_FAILURE;
-        //     }
-        //     if (ListEraseElem(&list, new_ins_pos))
-        //     {
-        //         ListDtor(&list);
-        //         return EXIT_FAILURE;
-        //     }
-        // }
+        for (int i = 0; i < 10000; i++)
+        {
+            if (ListInsertBefore(&list, insert_pos, 100, &new_ins_pos))
+            {
+                ListDtor(&list);
+                return EXIT_FAILURE;
+            }
+            if (ListEraseElem(&list, new_ins_pos))
+            {
+                ListDtor(&list);
+                return EXIT_FAILURE;
+            }
+        }
+#endif /* LIST_DEBUG */
 
         if (ListEraseElem(&list, insert_pos))
             break;
 
-        if (ListReallocDownLinear(&list))
-            break;
+//         if (ListReallocDownLinear(&list))
+//             break;
     }
     while (0);
 
