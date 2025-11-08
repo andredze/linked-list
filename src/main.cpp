@@ -66,7 +66,7 @@ int main()
 #ifndef STD_LIST_DEBUG
         StdNode_t* new_ins_node = 0;
 
-        for (int i = 0; i < 10000; i++)
+        for (int i = 0; i < 100000; i++)
         {
             if (StdListInsertBefore(&std_list, insert_node, 100, &new_ins_node))
             {
@@ -153,7 +153,7 @@ int main()
 #ifndef LIST_DEBUG
         int new_ins_pos = 0;
 
-        for (int i = 0; i < 10000; i++)
+        for (int i = 0; i < 100000; i++)
         {
             if (ListInsertBefore(&list, insert_pos, 100, &new_ins_pos))
             {
