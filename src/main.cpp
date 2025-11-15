@@ -9,6 +9,8 @@
 
 #include "common.h"
 #include <time.h>
+#include <intrin.h>
+#include <windows.h>
 
 //------------------------------------------------------------------------------------------
 
@@ -20,15 +22,15 @@ int main()
 
     StdList_t std_list = {};
 
-    clock_t std_start_time = 0;
-    clock_t std_end_time   = 0;
+    unsigned __int64 std_start_ticks = 0;
+    unsigned __int64 std_end_ticks   = 0;
 
     do
     {
         StdNode_t* insert_node = NULL;
         StdNode_t* root_node   = NULL;
 
-        std_start_time = clock();
+        std_start_ticks = __rdtsc();
 
         if (StdListCtor (&std_list, &root_node))
             break;
@@ -66,22 +68,25 @@ int main()
 #ifndef STD_LIST_DEBUG
         StdNode_t* new_ins_node = 0;
 
-        for (int i = 0; i < 100000; i++)
+        for (int j = 0; j < 3000; j++)
         {
-            if (StdListInsertBefore(&std_list, insert_node, 100, &new_ins_node))
+            for (int i = 0; i < 100000; i++)
             {
-                StdListDtor(&std_list);
-                return EXIT_FAILURE;
-            }
-            if (StdListInsertAfter(&std_list, insert_node, 110, &new_ins_node))
-            {
-                StdListDtor(&std_list);
-                return EXIT_FAILURE;
-            }
-            if (StdListEraseElem(&std_list, new_ins_node))
-            {
-                StdListDtor(&std_list);
-                return EXIT_FAILURE;
+                if (StdListInsertBefore(&std_list, insert_node, 100, &new_ins_node))
+                {
+                    StdListDtor(&std_list);
+                    return EXIT_FAILURE;
+                }
+                if (StdListInsertAfter(&std_list, insert_node, 110, &new_ins_node))
+                {
+                    StdListDtor(&std_list);
+                    return EXIT_FAILURE;
+                }
+                if (StdListEraseElem(&std_list, new_ins_node))
+                {
+                    StdListDtor(&std_list);
+                    return EXIT_FAILURE;
+                }
             }
         }
 #endif /* STD_LIST_DEBUG */
@@ -91,29 +96,31 @@ int main()
     }
     while (0);
 
-    std_end_time = clock();
-
     if (StdListDtor(&std_list))
     {
         return EXIT_FAILURE;
     }
 
+    std_end_ticks = __rdtsc();
+
 #endif
 #ifdef AOS_LIST
 
+    Sleep(50000);
+
     List_t list = {};
 
-    clock_t aos_start_time = 0;
-    clock_t aos_end_time   = 0;
+    unsigned __int64 aos_start_ticks = 0;
+    unsigned __int64 aos_end_ticks   = 0;
 
     do
     {
         int insert_pos = 0;
 
+        aos_start_ticks = __rdtsc();
+
         if (ListCtor(&list, 4))
             break;
-
-        aos_start_time = clock();
 
         if (ListInsertAfter(&list, 0, 25, &insert_pos))
             break;
@@ -158,22 +165,25 @@ int main()
 #ifndef LIST_DEBUG
         int new_ins_pos = 0;
 
-        for (int i = 0; i < 100000; i++)
+        for (int j = 0; j < 3000; j++)
         {
-            if (ListInsertBefore(&list, insert_pos, 100, &new_ins_pos))
+            for (int i = 0; i < 100000; i++)
             {
-                ListDtor(&list);
-                return EXIT_FAILURE;
-            }
-            if (ListInsertAfter(&list, insert_pos, 110, &new_ins_pos))
-            {
-                ListDtor(&list);
-                return EXIT_FAILURE;
-            }
-            if (ListEraseElem(&list, new_ins_pos))
-            {
-                ListDtor(&list);
-                return EXIT_FAILURE;
+                if (ListInsertBefore(&list, insert_pos, 100, &new_ins_pos))
+                {
+                    ListDtor(&list);
+                    return EXIT_FAILURE;
+                }
+                if (ListInsertAfter(&list, insert_pos, 110, &new_ins_pos))
+                {
+                    ListDtor(&list);
+                    return EXIT_FAILURE;
+                }
+                if (ListEraseElem(&list, new_ins_pos))
+                {
+                    ListDtor(&list);
+                    return EXIT_FAILURE;
+                }
             }
         }
 #endif /* LIST_DEBUG */
@@ -186,29 +196,29 @@ int main()
     }
     while (0);
 
-    aos_end_time = clock();
-
     if (ListDtor(&list))
     {
         return EXIT_FAILURE;
     }
 
+    aos_end_ticks = __rdtsc();
+
 #endif
 
 #ifdef STD_LIST
-    double std_run_time = ((double) (std_end_time - std_start_time)) / CLOCKS_PER_SEC;
-    printf("Standard list run time       = %lg;\n", (double) std_run_time);
+    signed __int64 std_run_ticks = std_end_ticks - std_start_ticks;
+    printf("Standard list run ticks       = %lld;\n", std_run_ticks);
 #endif
 #ifdef AOS_LIST
-    double aos_run_time = ((double) (aos_end_time - aos_start_time)) / CLOCKS_PER_SEC;
-    printf("Array of structures run time = %lg;\n", aos_run_time);
+    signed __int64 aos_run_ticks = aos_end_ticks - aos_start_ticks;
+    printf("Array of structures run ticks = %lld;\n", aos_run_ticks);
 #endif
 
 #ifdef STD_LIST
 #ifdef AOS_LIST
-    printf("Absolute difference          = %lg;\n", std_run_time - aos_run_time);
-    printf("How faster? (std/aos)        = %lg;\n", std_run_time / aos_run_time);
-    printf("Relative difference          = %lg%%;\n", 100 * (std_run_time - aos_run_time) / aos_run_time);
+    printf("Absolute difference          = %lld;\n", std_run_ticks - aos_run_ticks);
+    printf("How faster? (std/aos)        = %lg;\n", ((double) std_run_ticks / (double) aos_run_ticks));
+    printf("Relative difference          = %lg%%;\n", 100 * ((double) (std_run_ticks - aos_run_ticks) / (double) aos_run_ticks));
 #endif
 #endif
 

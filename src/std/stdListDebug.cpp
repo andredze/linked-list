@@ -195,17 +195,17 @@ int StdListSetDirectories(char* log_filename, char* image_dir, char* dot_dir)
     strftime(time_dir, sizeof(time_dir), "%d%m%Y_%H%M%S", info);
 
     snprintf(dir, 100, "std_log/%s", time_dir);
-    mkdir(dir, 0777);
+    mkdir(dir);
 
     sprintf(image_dir, "std_log/%s/svg", time_dir);
 
     DPRINTF("image_dir = %s;\n", image_dir);
-    mkdir(image_dir, 0777);
+    mkdir(image_dir);
 
     sprintf(dot_dir, "std_log/%s/dot", time_dir);
 
     DPRINTF("dot_dir   = %s;\n", dot_dir);
-    mkdir(dot_dir, 0777);
+    mkdir(dot_dir);
 
     sprintf(log_filename, "std_log/%s/list_log.html", time_dir);
 
